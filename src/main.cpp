@@ -1,3 +1,4 @@
+#include <exception>
 #include <string.h>
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -17,21 +18,23 @@
 using namespace MachineLearning;
 
 int main(int argc, char* argv[])
+try
 {
     boost::program_options::options_description desc("Validating classficators");
     uint32_t fold_count = 10;
-    std::string infile = "./factors.txt";
+    std::string datafile = "factors.txt";
     std::string outdir = "./";
     std::string predictor_type = "log_regressor";
     desc.add_options()
     ("help", "produce help message")
-    ("input-file,i", boost::program_options::value(&infile), "input data file")
-    ("output-path,o", boost::program_options::value(&outdir), "directory with output files")
-    ("fold-count,k", boost::program_options::value(&fold_count), "count of folds to validate")
-    ("predictor-type,t", boost::program_options::value(&predictor_type), "type of predictior (log_regressor, ldf)")
+    ("data,d", boost::program_options::value<std::string>(&datafile), "input data file")
+    ("output-path,o", boost::program_options::value<std::string>(&outdir), "directory with output files")
+    ("fold-count,k", boost::program_options::value<uint32_t>(&fold_count), "count of folds to validate")
+    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf)")
     ;
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+    boost::program_options::notify(vm);
 
     if (vm.count("help"))
     {
@@ -40,11 +43,10 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-	std::cout << "k Fold Crossvalidation starting..." << std::endl;
+	std::cout << "k Fold Crossvalidation of " << predictor_type  << " starting..." << std::endl;
 
-	std::string fileName(infile);
-	std::cout << "wait while reading data..." << std::endl;
-	DataStorageMaximus storage(fileName);
+	std::cout << "wait while reading data from file \"" << datafile << "\"..."<< std::endl;
+	DataStorageMaximus storage(datafile);
 	std::cout << "data reading finished" << std::endl;
 	std::vector<std::pair<std::string, size_t> > categories = storage.getCategories();
 
@@ -55,12 +57,12 @@ int main(int argc, char* argv[])
 	{
         index++;
 		std::cout << "Category: " << it->first.c_str() << " | Volume: " << it->second << std::endl;
-		Pool pool = storage.toPool(it->first);
+		Pool pool =  storage.toPool(it->first);
 	    std::cout << "Data are processed" << std::endl;
         Predictor* predictor;
-        if (std::strcmp(predictor_type.c_str(),"ldf"))
+        if (predictor_type.compare("ldf") == 0)
         {
-    	    predictor = new SimpleFischerLDA(pool.getInstanceCount());
+            predictor = new SimpleFischerLDA(pool.getInstanceCount());
         }
         else
         {
@@ -72,4 +74,8 @@ int main(int argc, char* argv[])
 	std::cout << "cv control finished" << std::endl;
 
 	return 0;
+}
+catch (std::exception& e)
+{
+    std::cout << "cv control failes" << e.what() << std::endl;
 }

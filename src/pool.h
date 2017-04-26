@@ -18,7 +18,7 @@ namespace MachineLearning
 		int foldsCount;
 
 	public:
-
+		Pool() {};
 		Pool(std::vector<Instance> _instances);
 
 		void shuffle(std::vector<std::vector<Instance>> &learnSet, std::vector<std::vector<Instance>> &testSet, int foldsCount);
@@ -29,7 +29,7 @@ namespace MachineLearning
 
 		size_t getInstanceCount();
 
-	
+
 	protected:
 
 		unsigned int genRand();

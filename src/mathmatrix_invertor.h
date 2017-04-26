@@ -1,6 +1,8 @@
 #ifndef MATHMATRIXINVERTOR_H
 #define MATHMATRIXINVERTOR_H
 
+#include <math.h>
+
 #include "mathmatrix.h"
 #include "mathmatrix_decomposer.h"
 #include "mathmatrix_solver.h"
@@ -50,15 +52,25 @@ namespace MathCore
 							q = decompose.at(0);
 							r = decompose.at(1);
 
-							MathMatrix<T> inverse_r(0, matrix.cols_size(), 0);
-
 							size_t row_size = matrix.rows_size();
+                            std::vector<MathVector<T>> inverse_r_raw(row_size);
 
+                            size_t total_count = 0;
+                            size_t part = pow(10, 1);
+                            #pragma omp parallel for
 							for (size_t index = 0; index < row_size; index++)
 							{
 								MathVector<T> step = (new MatrixSolver::UpTriangleSolver<T>())->solve(r, e[index]);
-								inverse_r.push_back(step);
+								inverse_r_raw.at(index) = step;
+
+                                #pragma omp atomic
+                                total_count++;
+                                #pragma omp atomic
+                                if ((total_count % part) == 0)
+                                    std::cout << "total count: " << total_count << std::endl;
 							}
+
+							MathMatrix<T> inverse_r(inverse_r_raw);
 
 							MathMatrix<T>* inverse_t = &(~(q * inverse_r));
 

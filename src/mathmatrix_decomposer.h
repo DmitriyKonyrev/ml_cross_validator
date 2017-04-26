@@ -6,7 +6,9 @@
 
 #include "mathmatrix.h"
 
+#include <iostream>
 #include <vector>
+#include <math.h>
 
 using namespace MathCore::AlgebraCore::VectorCore;
 using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
@@ -45,24 +47,30 @@ namespace MathCore
 							size_t rows = matrix.rows_size();
 							size_t cols = matrix.cols_size();
 
+                            VectorNorm::EuclideanNorm<T> euclidean;
+
 							MathMatrix<T> transponate = ~matrix;
 
 							MathMatrix<T>  q(transponate);
 							MathMatrix<T> r(matrix.cols_size(), matrix.cols_size(), 0);
-
-
-
+                            size_t total_count = 0;
+                            size_t part = pow(10, 1);
 							for (size_t index_2 = 0; index_2 < cols; index_2++)
 							{
-								for (size_t index_1 = 0; index_1 < index_2; index_1++)
+                                T r_value_ = euclidean.calc(q[index_2]);
+                                if (r_value_ == (T)0)
+                                    continue;
+								r[index_2].insert(r_value_, index_2);
+                                q[index_2] /= r_value_;
+
+                                #pragma omp parallel for
+								for (size_t index_1 = index_2; index_1 < cols; index_1++)
 								{
-									r[index_1].insert(q[index_1] * transponate[index_2] / (new VectorNorm::EuclideanNorm<T>)->calc(q[index_1]), index_2);
-									q[index_2] -= q[index_1] * r[index_1].getElement(index_2);
+                                    T r_value = (q[index_2] * transponate[index_1]);
+
+									r[index_2].insert(r_value, index_1);
+									q[index_2] -= q[index_1] * r_value;
 								}
-
-								r[index_2].insert((new VectorNorm::EuclideanNorm<T>())->calc(q[index_2]), index_2);
-								q[index_2] /= r[index_2].getElement(index_2);
-
 							}
 
 							std::vector<MathMatrix<T>>* result = new std::vector<MathMatrix<T>>();
@@ -72,7 +80,6 @@ namespace MathCore
 
 
 							return *result;
-
 						}
 
 					};

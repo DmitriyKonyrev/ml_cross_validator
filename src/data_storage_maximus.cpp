@@ -42,8 +42,6 @@ void DataStorageMaximus::parseFromFile(std::string fileName)
 	}
 	else
 	{
-
-
 		if (!fin.eof())
 		{
 			string line;

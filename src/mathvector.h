@@ -526,7 +526,7 @@ namespace MathCore
 
 				if (value == 0)
 				{
-					throw std::exception();
+					throw std::logic_error("division by zero");
 				}
 				else
 				{
@@ -633,7 +633,7 @@ namespace MathCore
 			{
 				if (value == 0)
 				{
-					throw std::exception();
+					throw std::logic_error("division by zero");
 				}
 				else
 				{

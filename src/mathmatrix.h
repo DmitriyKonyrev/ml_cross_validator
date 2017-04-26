@@ -1,6 +1,7 @@
 #ifndef MATHMATRIX_H
 #define MATHMATRIX_H
 
+#include <iostream>
 #include <vector>
 #include "mathvector.h"
 
@@ -333,7 +334,7 @@ namespace MathCore
 
 				if (this->row_size != _other.row_size || this->col_size != _other.col_size)
 				{
-					throw std::exception();
+					throw std::logic_error("summarizing dimensions mismatch");
 				}
 				else
 				{
@@ -352,7 +353,7 @@ namespace MathCore
 
 				if (this->row_size != _other.row_size || this->col_size != _other.col_size)
 				{
-					throw std::exception();
+					throw std::logic_error("summarizing dimensions mismatch");
 				}
 				else
 				{
@@ -399,7 +400,7 @@ namespace MathCore
 			{
 				if (this->col_size != _other.row_size)
 				{
-					throw std::exception();
+					throw std::logic_error("summarizing dimensions mismatch");
 				}
 				else
 				{
@@ -430,7 +431,7 @@ namespace MathCore
 
 				if (this->row_size != _other.row_size || this->col_size != _other.col_size)
 				{
-					throw std::exception();
+					throw std::logic_error("summarizing dimensions mismatch");
 				}
 				else
 				{
@@ -464,7 +465,7 @@ namespace MathCore
 			{
 				if (this->col_size != _other.row_size)
 				{
-					throw std::exception();
+					throw std::logic_error("summarizing dimensions mismatch");
 				}
 				else
 				{

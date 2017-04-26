@@ -16,8 +16,10 @@
 
 #include "mathmatrix.h"
 #include "mathvector.h"
+#include "mathvector_norm.h"
 
 using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
 using namespace MathCore::AlgebraCore::MatrixCore;
 
 using namespace MachineLearning;
@@ -32,7 +34,7 @@ float SimpleFischerLDA::predict(MathVector<float>& features)
 	float _prediction_positive = (features * this->alpha_positive) + this->betta_positive + std::log(this->fine.first * this->prioriProbability.first);
 	float _prediction_negative = (features * this->alpha_negative) + this->betta_negative + std::log(this->fine.second * this->prioriProbability.second);
 
-	return (_prediction_positive > _prediction_negative) ? 1. : -1.;
+	return ((_prediction_positive - _prediction_negative ) > threshold) ? 1. : -1.;
 }
 
 void SimpleFischerLDA::learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve)
@@ -59,6 +61,8 @@ void SimpleFischerLDA::learn(std::vector<Instance>& learnSet, std::vector<std::p
     std::cout << "calculating covariation" << std::endl;
     MathMatrix<float> _covariation_inverse;
 	this->covariation(learnF, learnY, _sample_means, _covariation_inverse);
+    std::cout << "inverse covariation" << std::endl;
+    _covariation_inverse = !_covariation_inverse;
 
 	MathMatrix<float> sampleMeans_positive(0, _sample_means[0].getSize());
 	MathMatrix<float> sampleMeans_negative(0, _sample_means[1].getSize());
@@ -121,7 +125,6 @@ MathMatrix<float>& SimpleFischerLDA::sampleMeans(std::vector<MathVector<float>>&
 	prioriProbability_positive = instances_positive / learnF.size();
 	prioriProbability_negative = instances_negative / learnF.size();
 
-	this->fine = std::make_pair(instances_negative, instances_positive);
 
 	prioriProbability = std::make_pair(prioriProbability_positive, prioriProbability_negative);
 
@@ -131,6 +134,10 @@ MathMatrix<float>& SimpleFischerLDA::sampleMeans(std::vector<MathVector<float>>&
 	std::vector<MathVector<float>> sampleMeans;
 	sampleMeans.push_back(_sample_means_positive);
 	sampleMeans.push_back(_sample_means_negative);
+    EuclideanNorm<float> euclidean;
+	//this->fine = std::make_pair(instances_negative, instances_positive);
+    this->fine = std::make_pair(euclidean.calc(_sample_means_positive) * instances_negative, euclidean.calc(_sample_means_negative) * instances_positive);
+
 
 	MathMatrix<float>* _values = new MathMatrix<float>(sampleMeans);
 
@@ -144,7 +151,7 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
     size_t total_count = 0;
     float regularizeValue = std::pow(10, -5);
     float normalizing = (learnSet.rows_size() - 2);
-
+    float magic = pow(10.0, -8.0);
 #pragma omp parallel for private(regularizeValue)
 	for (size_t index = 0; index < learnSet.rows_size(); index++)
 	{
@@ -167,13 +174,13 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
 
 			for (; innerIt != difference.fast_end(); ++innerIt)
 			{
-				float value_1 = (_covariations.at(outIt->first, innerIt->first) + outIt->second * innerIt->second) / normalizing + ((outIt == innerIt) ? regularizeValue : 0.0);
-				float value_2 = (_covariations.at(innerIt->first, outIt->first) + outIt->second * innerIt->second) / normalizing;
+				float value_1 = (_covariations.at(outIt->first, innerIt->first) + outIt->second * innerIt->second) / normalizing + ((outIt == innerIt) ? regularizeValue : 0.0) + magic;
+				float value_2 = (_covariations.at(innerIt->first, outIt->first) + outIt->second * innerIt->second) / normalizing + magic;
 				_covariations.insert_element(value_1, outIt->first, innerIt->first);
                 if (outIt != innerIt)
 				{
                     #pragma omp atomic
-                    _covariations.insert_element(value_2, outIt->first, innerIt->first);
+                    _covariations.insert_element(value_2, innerIt->first, outIt->first);
 				}
 			}
 		}
