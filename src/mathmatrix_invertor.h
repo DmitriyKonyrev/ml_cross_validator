@@ -1,6 +1,7 @@
 #ifndef MATHMATRIXINVERTOR_H
 #define MATHMATRIXINVERTOR_H
 
+#include <iostream>
 #include <math.h>
 
 #include "mathmatrix.h"
@@ -47,6 +48,7 @@ namespace MathCore
 							MathMatrix<T> q;
 							MathMatrix<T> r;
 
+                            std::cout << "start decomposing" << std::endl;
 							std::vector<MathMatrix<T>> decompose = (new MatrixDecomposer::QRDecomposerGS<T>())->decompose(matrix);
 
 							q = decompose.at(0);
@@ -56,7 +58,9 @@ namespace MathCore
                             std::vector<MathVector<T>> inverse_r_raw(row_size);
 
                             size_t total_count = 0;
-                            size_t part = pow(10, 1);
+                            size_t part = pow(10, 3);
+                            std::cout << "start inverting R" << std::endl;
+
                             #pragma omp parallel for
 							for (size_t index = 0; index < row_size; index++)
 							{
@@ -72,6 +76,7 @@ namespace MathCore
 
 							MathMatrix<T> inverse_r(inverse_r_raw);
 
+                            std::cout << "final inverting" << std::endl;
 							MathMatrix<T>* inverse_t = &(~(q * inverse_r));
 
 							return *inverse_t;

@@ -72,20 +72,21 @@ namespace MathCore
 								std::vector<T> result(vector.to_std_vector());
 
 								size_t row_size = matrix.rows_size();
-
+                                #pragma omp parallel for
 								for (int index1 = row_size - 1; index1 >= 0; index1--)
 								{
-									result.at(index1) /= matrix.at(index1, index1);
+                                    T value = result.at(index1) / matrix.at(index1, index1);
 
-									T value = result.at(index1);
+                                    #pragma omp atomic
+									result.at(index1) = value;
 
-									//#pragma omp parallel for;
-									//						private(value)
+                                    #pragma omp parallel for
 									for (int index2 = index1 - 1; index2 >= 0; index2--)
 									{
-										T coefficient = matrix.at(index2, index1);
 
-										result.at(index2) -= coefficient * value;
+										T coefficient = result.at(index2) - matrix.at(index2, index1) * value;
+                                        #pragma omp atomic
+										result.at(index2) = coefficient;
 									}
 								}
 
