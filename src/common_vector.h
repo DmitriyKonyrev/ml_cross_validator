@@ -118,10 +118,15 @@ namespace MathCore
             size_t get_size() { return m_size; };
 			virtual void update(const T& value, size_t index) = 0;
             virtual bool is_null() = 0;
-			void clear()
+			virtual void clear()
 			{
 				this->m_size = 0;
 				m_load_factor = 0;
+			}
+
+			virtual void extend(size_t counts)
+			{
+				m_size += counts;
 			}
 
             //------------iteration-operators--------

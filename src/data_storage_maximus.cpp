@@ -77,6 +77,5 @@ void DataStorageMaximus::parseFromFile(std::string fileName)
 		}
 	}
 
-
 	return;
 }

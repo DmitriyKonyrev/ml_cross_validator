@@ -1,12 +1,12 @@
 #ifndef INSTANCE_H
 #define INSTANCE_H
 
-#include "mathvector.h"
+#include "math_vector.h"
 
 #include <vector>
 #include <string.h>
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 namespace MachineLearning
 {

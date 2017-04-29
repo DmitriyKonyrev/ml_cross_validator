@@ -165,6 +165,12 @@ namespace MathCore
             {
                 return this->m_notNullIndexes.size() == 0;
             }
+			
+			void extend(size_t counts)
+			{
+				CommonVector<T>::extend(counts);
+
+			}
 
 			void clear()
 			{

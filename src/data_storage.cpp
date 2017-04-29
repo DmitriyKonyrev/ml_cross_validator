@@ -13,9 +13,9 @@
 #include "pool.h"
 #include "data_storage.h"
 
-#include "mathvector.h"
+#include "math_vector.h"
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore;
 
 using namespace MachineLearning;
 

@@ -16,11 +16,11 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
-#include "mathvector.h"
+#include "math_vector.h"
 
 
 using namespace MachineLearning;
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 
 DataMaxim::DataMaxim(std::vector<std::string> _categories, MathVector<float>& _features)
@@ -66,9 +66,7 @@ void DataMaxim::parseFrom(std::string _data, int feature_count)
 		featuresValue[position] = atof(feature_values.back().c_str());
 	}
 
-	(this->features) = *(new MathVector<float>(featuresValue));
-
-	this->features.completeWith(feature_count - this->features.getSize(), 0);
+	(this->features) = *(new MathVector<float>(featuresValue, feature_count));
 
 	return;
 }

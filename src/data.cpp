@@ -5,13 +5,13 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include "instance.h"
-#include "mathvector.h"
+#include "math_vector.h"
 
 #include "data.h"
 
 using namespace MachineLearning;
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 std::string Data::CIPHERS = "0123456789";
 
@@ -41,7 +41,7 @@ size_t Data::featuresSize()
 
 void Data::completeFeatures(size_t counts)
 {
-	this->features.completeWith(counts, 0);
+	this->features.extend_data(counts);
 
 	return;
 }
@@ -109,7 +109,7 @@ void Data::parseFrom(std::string _data)
 		not_nulls.insert(position);
 	}
 
-	this->features = *(new MathVector<float>(rawFeatures, not_nulls));
+	this->features = *(new MathVector<float>(rawFeatures, not_nulls.size()));
 
 	return;
 }

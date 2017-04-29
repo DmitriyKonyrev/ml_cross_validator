@@ -165,6 +165,12 @@ namespace MathCore
 				CommonVector<T>::clear();
 			}
 
+			void extend(size_t counts)
+			{
+				CommonVector<T>::extend(counts);
+				m_values.resize(this->m_size);
+			}
+
             //------------iteration-operators--------
             T get_value(size_t index)
             {

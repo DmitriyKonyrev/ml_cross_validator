@@ -37,6 +37,7 @@ namespace MathCore
 			T update(T factor, const MathVector<T>& values);
 			T gelElement(size_t position);
 			void insert(T element, size_t position);
+			void extend_data(size_t counts);
 			void clear();
 
             template<typename U> friend bool operator==(const MathVector<U>& left, const MathVector<U>& right);
@@ -125,6 +126,11 @@ namespace MathCore
 	template<typename T> void MathVector<T>::clear()
 	{
 		m_vectorData->clear();
+	}
+	
+	template<typename T> void MathVector<T>::extend_data(size_t counts)
+	{
+		this->m_vectorData->extend(counts);
 	}
 
         template<typename T> bool MathVector<T>::is_zeros()
