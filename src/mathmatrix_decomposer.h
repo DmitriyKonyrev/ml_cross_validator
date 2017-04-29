@@ -54,23 +54,26 @@ namespace MathCore
 							MathMatrix<T>  q(transponate);
 							MathMatrix<T> r(matrix.cols_size(), matrix.cols_size(), 0);
                             size_t total_count = 0;
-                            size_t part = pow(10, 1);
+                            size_t part = pow(10, 2);
+
 							for (size_t index_2 = 0; index_2 < cols; index_2++)
 							{
-                                T r_value_ = euclidean.calc(q[index_2]);
-                                if (r_value_ == (T)0)
-                                    continue;
+								T regular = q[index_2].getElement(index_2) + pow(10.0, -6);
+								q[index_2].insert(regular, index_2);
+								T r_value_ = euclidean.calc(q[index_2]);
 								r[index_2].insert(r_value_, index_2);
-                                q[index_2] /= r_value_;
-
-                                #pragma omp parallel for
-								for (size_t index_1 = index_2; index_1 < cols; index_1++)
+								q[index_2] /= r[index_2].getElement(index_2);
+								#pragma omp parallel for
+								for (size_t index_1 = index_2 + 1; index_1 < cols; index_1++)
 								{
-                                    T r_value = (q[index_2] * transponate[index_1]);
-
+                                    T r_value = q[index_2] * q[index_1];
+									q[index_1] -= q[index_2] * r_value;
 									r[index_2].insert(r_value, index_1);
-									q[index_2] -= q[index_1] * r_value;
 								}
+
+								total_count++;
+								if ((total_count % part) == 0)
+									std::cout << "processed: " << total_count << " of " << cols << std::endl;
 							}
 
 							std::vector<MathMatrix<T>>* result = new std::vector<MathMatrix<T>>();

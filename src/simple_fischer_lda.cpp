@@ -152,7 +152,7 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
     float regularizeValue = std::pow(10, -5);
     float normalizing = (learnSet.rows_size() - 2);
     float magic = pow(10.0, -8.0);
-#pragma omp parallel for private(regularizeValue)
+#pragma omp parallel for
 	for (size_t index = 0; index < learnSet.rows_size(); index++)
 	{
 		MathVector<float> difference;
@@ -174,8 +174,9 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
 
 			for (; innerIt != difference.fast_end(); ++innerIt)
 			{
-				float value_1 = (_covariations.at(outIt->first, innerIt->first) + outIt->second * innerIt->second) / normalizing + ((outIt == innerIt) ? regularizeValue : 0.0) + magic;
-				float value_2 = (_covariations.at(innerIt->first, outIt->first) + outIt->second * innerIt->second) / normalizing + magic;
+				float value_1 = (_covariations.at(outIt->first, innerIt->first) + outIt->second * innerIt->second) / normalizing + ((outIt == innerIt) ? regularizeValue : 0.0);
+				float value_2 = (_covariations.at(innerIt->first, outIt->first) + outIt->second * innerIt->second) / normalizing;
+				#pragma omp atomic
 				_covariations.insert_element(value_1, outIt->first, innerIt->first);
                 if (outIt != innerIt)
 				{
