@@ -8,9 +8,9 @@
 #include "mathmatrix_decomposer.h"
 #include "mathmatrix_solver.h"
 
-#include "mathvector.h"
+#include "math_vector.h"
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 namespace MathCore
 {
@@ -34,8 +34,6 @@ namespace MathCore
 							return matrix;
 						}
 					};
-
-
 
 					template <typename T> class QRInvertor : public MathMatrixInvertor < T >
 					{

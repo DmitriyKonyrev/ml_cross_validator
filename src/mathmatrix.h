@@ -3,11 +3,11 @@
 
 #include <iostream>
 #include <vector>
-#include "mathvector.h"
+#include "math_vector.h"
 
 #include "mathmatrix_invertor.h"
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 namespace MathCore
 {
@@ -194,7 +194,7 @@ namespace MathCore
 
 				if (this->row_size != 0)
 				{
-					this->col_size = _values.begin()->getSize();
+					this->col_size = _values.begin()->get_dimension();
 
 					this->values = _values;
 
@@ -340,7 +340,7 @@ namespace MathCore
 				{
 					for (size_t index = 0; index < result->row_size(); ++index)
 					{
-						result->values.at(index) += _other.values.at(index);
+						result->values.at(index) = result->values.at(index) + _other.values.at(index);
 					}
 				}
 
@@ -359,7 +359,7 @@ namespace MathCore
 				{
 					for (size_t index = 0; index < result->rows_size(); ++index)
 					{
-						result->values.at(index) -= _other.values.at(index);
+						result->values.at(index) = result->values.at(index) - _other.values.at(index);
 					}
 				}
 
@@ -437,7 +437,7 @@ namespace MathCore
 				{
 					for (size_t index = 0; index < this->row_size; ++index)
 					{
-						this->values.at(index) += _other.values.at(index);
+						this->values.at(index) = this->values.at(index) +  _other.values.at(index);
 					}
 				}
 
@@ -454,7 +454,7 @@ namespace MathCore
 				{
 					for (size_t index = 0; index < this->row_size(); ++index)
 					{
-						this->values.at(index) -= _other.values.at(index);
+						this->values.at(index) = this->values.at(index) - _other.values.at(index);
 					}
 				}
 
@@ -593,15 +593,13 @@ namespace MathCore
 				size_t row_size_t = this->col_size;
 				size_t col_size_t = this->row_size;
 
-				std::vector<MathVector<T>> values_t(this->col_size, MathVector<T>(this->row_size, 0));
+				std::vector<std::vector<T>> values_t(this->col_size, std::vector<T>(this->row_size, (T)0));
 
 				for (size_t rowindex = 0; rowindex < this->row_size; ++rowindex)
 				{
-					typename MathVector<T>::fast_iterator  it = this->values.at(rowindex).fast_begin();
-					typename MathVector<T>::fast_iterator  end = this->values.at(rowindex).fast_end();
-					for (; it != end; ++it)
+					for (size_t colindex = 0;  colindex < this->col_size; ++colindex)
 					{
-						values_t.at(it->first).insert(it->second, rowindex);
+						values_t.at(colindex).at(rowindex) = this->values.at(rowindex).getElement(colindex);
 					}
 				}
 
@@ -677,5 +675,3 @@ namespace MathCore
 }
 
 #endif //MATHMATRIX_H
-
-

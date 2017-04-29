@@ -2,9 +2,9 @@
 #define MATHMATRIXSOLVER_H
 
 #include "mathmatrix.h"
+#include "math_vector.h"
 
-
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 
 namespace MathCore
 {
@@ -22,7 +22,7 @@ namespace MathCore
 					{
 					public:
 
-						virtual MathVector<T> solve(MathMatrix<T>& matrix, MathVector<T>& vector)
+						virtual MathVector<T> solve(const MathMatrix<T>& matrix, const MathVector<T>& vector)
 						{
 							return MathVector<T>();
 						}
@@ -32,33 +32,32 @@ namespace MathCore
 					{
 					public:
 
-						MathVector<T> solve(MathMatrix<T>& matrix, MathVector<T>& vector)
+						MathVector<T> solve(const MathMatrix<T>& matrix, const MathVector<T>& vector)
 						{
-							std::vector<T> result(vector.to_std_vector());
+							MathVector<T> result(vector);
 
 							size_t row_size = matrix.row_size();
 
 							for (int index1 = 0; index1 < row_size; ++index1)
 							{
 
-								if (result.at(index1) != 0)
+								if (vector.gelElement(index1) != 0)
 								{
-									result.at(index1) /= matrix.at(index1, index1);
-
-									T value = result.at(index1);
-
-#pragma omp parallel for private(value);
+									T value = result.getElement(index1) / matrix.at(index1, index1);
+									result.insert(value, index1);
+									
+									#pragma omp parallel for
 									for (int index2 = index1 + 1; index2 < row_size; ++index2)
 									{
 										T coefficient = matrix.at(index2, index1);
-
-										result.at(index2) -= coefficient * value;
+										T _value = result.getElement(index2) - coefficient * value;
+										#pragma omp atomic
+										result.insert(_value, index2);
 									}
-
 								}
 							}
 
-							return MathVector<T>(result);
+							return result;
 						}
 
 					};
@@ -67,30 +66,30 @@ namespace MathCore
 						{
 						public:
 
-							MathVector<T> solve(MathMatrix<T>& matrix, MathVector<T>& vector)
+							MathVector<T> solve(const MathMatrix<T>& matrix, const MathVector<T>& vector)
 							{
-								std::vector<T> result(vector.to_std_vector());
+								MathCore<T> result(vector);
 
 								size_t row_size = matrix.rows_size();
                                 #pragma omp parallel for
 								for (int index1 = row_size - 1; index1 >= 0; index1--)
 								{
-                                    T value = result.at(index1) / matrix.at(index1, index1);
+                                    T value = result.getElement(index1) / matrix.at(index1, index1);
 
                                     #pragma omp atomic
-									result.at(index1) = value;
+									result.insrt(value, index1);
 
                                     #pragma omp parallel for
 									for (int index2 = index1 - 1; index2 >= 0; index2--)
 									{
 
-										T coefficient = result.at(index2) - matrix.at(index2, index1) * value;
+										T coefficient = result.getElement(index2) - matrix.at(index2, index1) * value;
                                         #pragma omp atomic
 										result.at(index2) = coefficient;
 									}
 								}
 
-								return MathVector<T>(result);
+								return result;
 							}
 
 						};

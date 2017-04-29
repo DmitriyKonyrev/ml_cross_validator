@@ -10,8 +10,7 @@
 #include <vector>
 #include <math.h>
 
-using namespace MathCore::AlgebraCore::VectorCore;
-using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
+using namespace MathCore::AlgebraCore;
 
 namespace MathCore
 {
@@ -47,7 +46,7 @@ namespace MathCore
 							size_t rows = matrix.rows_size();
 							size_t cols = matrix.cols_size();
 
-                            VectorNorm::EuclideanNorm<T> euclidean;
+                            HolderVectorNorm<T> euclidean;
 
 							MathMatrix<T> transponate = ~matrix;
 
@@ -60,7 +59,7 @@ namespace MathCore
 							{
 								T regular = q[index_2].getElement(index_2) + pow(10.0, -6);
 								q[index_2].insert(regular, index_2);
-								T r_value_ = euclidean.calc(q[index_2]);
+								T r_value_ = euclidean(q[index_2]);
 								r[index_2].insert(r_value_, index_2);
 								q[index_2] /= r[index_2].getElement(index_2);
 								#pragma omp parallel for
