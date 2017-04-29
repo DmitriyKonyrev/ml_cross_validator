@@ -29,10 +29,10 @@
 #include "logistic_regression.h"
 #endif
 
-#include "mathvector_norm.h"
+#include "math_vector_norm.h"
 
 using namespace MachineLearning;
-using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
+using namespace MathCore::AlgebraCore;
 
 float LogisticRegression::scalarProduct(MathVector<float>& features)
 {
@@ -130,7 +130,6 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 
     size_t part = pow(10, 3);
 
-	EuclideanNorm<float> euclidean;
 	do
 	{
 		size_t instance_index = distribution(gen);

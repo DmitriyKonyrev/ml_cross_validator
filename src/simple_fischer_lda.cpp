@@ -15,11 +15,10 @@
 #endif
 
 #include "mathmatrix.h"
-#include "mathvector.h"
-#include "mathvector_norm.h"
+#include "math_vector.h"
+#include "math_vector_norm.h"
 
-using namespace MathCore::AlgebraCore::VectorCore;
-using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
+using namespace MathCore::AlgebraCore;
 using namespace MathCore::AlgebraCore::MatrixCore;
 
 using namespace MachineLearning;
@@ -134,7 +133,7 @@ MathMatrix<float>& SimpleFischerLDA::sampleMeans(std::vector<MathVector<float>>&
 	std::vector<MathVector<float>> sampleMeans;
 	sampleMeans.push_back(_sample_means_positive);
 	sampleMeans.push_back(_sample_means_negative);
-    EuclideanNorm<float> euclidean;
+    HolderVectorNorm<float> euclidean;
 	//this->fine = std::make_pair(instances_negative, instances_positive);
     this->fine = std::make_pair(euclidean.calc(_sample_means_positive) * instances_negative, euclidean.calc(_sample_means_negative) * instances_positive);
 

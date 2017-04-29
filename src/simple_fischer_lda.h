@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "mathmatrix.h"
-#include "mathvector.h"
+#include "math_vector.h"
 
-using namespace MathCore::AlgebraCore::VectorCore;
+using namespace MathCore::AlgebraCore;
 using namespace MathCore::AlgebraCore::MatrixCore;
 
 namespace MachineLearning
