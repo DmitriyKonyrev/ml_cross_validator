@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <iterator>
 #include <exception>
@@ -12,6 +13,8 @@
 
 
 #include <iostream>
+
+#include "math_vector_iterator.h"
 
 using namespace std;
 
@@ -45,7 +48,7 @@ namespace MathCore
 			{
 			private:
 				size_t size;
-				std::map<size_t, T> data;
+				std::unordered_map<size_t, T> data;
 				std::set<size_t> not_nulls;
 
 			public:
@@ -57,30 +60,12 @@ namespace MathCore
 						return std::abs(first.second) > std::abs(second.second);
 					};
 				};
+				
+				typedef FastMathVectorIterator<T> fast_iterator;
+				typedef ConstFastMathVectorIterator<T> const_fast_iterator;
 
-				T getElement(size_t position);
-
-				typedef typename std::map<size_t, T>::iterator fast_iterator;
-				typedef typename std::map<size_t, T>::const_iterator const_fast_iterator;
-
-				struct iterator
-				{
-				private:
-
-					size_t position;
-
-				public:
-
-					iterator(size_t _position) : position(_position) {}
-					T& getElem() const { return *MathVector::getElement(this->position); }
-					void setElement(T& element) { MathVector::insert(element, position); return; }
-					T* operator++() { return ++position; }
-					T* operator--() { return --position; }
-					bool operator==(const iterator& other) const { return position == other.position; }
-					bool operator!=(const iterator& other) const { return !(*this == other); }
-				};
-
-				friend iterator;
+				friend fast_iterator;
+				friend const_fast_iterator;
 				friend Measures::MeasureFunction < T > ;
 				friend VectorNorm::MathVectorNorm < T > ;
 				friend VectorAlgorithm::MatrixSolver::MathMatrixSolver < T > ;
@@ -89,12 +74,13 @@ namespace MathCore
 				MathVector<T>(size_t _size, T _default_value);
 				MathVector<T>(const MathVector<T>& other);
 				MathVector<T>(const vector<T>& other);
-				MathVector<T>(const std::map<size_t, T>& other);
-				MathVector<T>(const std::map<size_t, T>& other, const std::set<size_t>& not_nulls);
+				MathVector<T>(const std::unordered_map<size_t, T>& other);
+				MathVector<T>(const std::unordered_map<size_t, T>& other, const std::set<size_t>& not_nulls);
 
 				void setValues(const vector<T>& other);
 				void setValues(size_t _size, T _default_value);
                 T update(T factor, const MathVector<T>& values);
+				T getElement(size_t position) const;
 
 				void push_back(T element);
 				T pop_back();
@@ -133,32 +119,22 @@ namespace MathCore
 
 				fast_iterator fast_begin()
 				{
-					return data.begin();
+					return fast_iterator(*this, (size_t)0);
 				}
 
 			    fast_iterator fast_end()
 				{
-					return data.end();
+					return fast_iterator(*this, (size_t)size);
 				}
 
-				const_fast_iterator fast_begin() const
+				const_fast_iterator const_fast_begin() const
 				{
-					return typename std::map<size_t, T>::const_iterator(data.begin());
+					return const_fast_iterator(*this, (size_t)0);
 				}
 
-				const_fast_iterator fast_end() const
+				const_fast_iterator const_fast_end() const
 				{
-					return typename std::map<size_t, T>::const_iterator(data.end());
-				}
-
-				iterator begin()
-				{
-					return iterator(0);
-				}
-
-				iterator end()
-				{
-					return iterator(this->size);
+					return const_fast_iterator(*this, (size_t)size);
 				}
 			};
 
@@ -186,30 +162,27 @@ namespace MathCore
 			{
 			}
 
-			template<typename T> MathVector<T>::MathVector(const std::map<size_t, T>& other, const std::set<size_t>& not_nulls)
+			template<typename T> MathVector<T>::MathVector(const std::unordered_map<size_t, T>& other, const std::set<size_t>& not_nulls)
 			{
 				this->data = other;
 				this->not_nulls = not_nulls;
 			}
 
-			template<typename T> MathVector<T>::MathVector(const std::map<size_t, T>& other)
+			template<typename T> MathVector<T>::MathVector(const std::unordered_map<size_t, T>& other)
 			{
 				this->data = other;
 
-				fast_iterator begin = this->data.begin();
-				fast_iterator end = this->data.end();
-
+				typename std::unordered_map<size_t, T>::const_iterator begin = this->data.begin();
+				typename std::unordered_map<size_t, T>::const_iterator end = this->data.end();
 
 				for (; begin != end; ++begin)
 				{
 					this->not_nulls.insert(begin->first);
 				}
 
-                typename std::map<size_t, T>::iterator last = this->data.end();
-
+                typename std::set<size_t, T>::iterator last = this->not_nulls.end();
 				last--;
-
-				this->size = last->first + 1;
+				this->size = *last + 1;
 			}
 
 			template<typename T> MathVector<T>::MathVector(const vector<T>& other)
@@ -221,7 +194,7 @@ namespace MathCore
 					if (other.at(index) != 0)
 					{
 						this->not_nulls.insert(index);
-						this->data[index] = other.at(index);
+						this->data.insert(std::make_pair(index, other.at(index)));
 					}
 				}
 			}
@@ -238,7 +211,7 @@ namespace MathCore
 				{
 					for (size_t index = 0; index < _size; ++index)
 					{
-						this->data[index] = _default_value;
+						this->data.insert(std::make_pair(index,  _default_value));
 						this->not_nulls.insert(index);
 					}
 				}
@@ -256,27 +229,27 @@ namespace MathCore
 					if (other.at(index) != 0)
 					{
 						this->not_nulls.insert(index);
-						this->data[index] = other.at(index);
+						this->data.insert(std::make_pair(index, other.at(index)));
 					}
 				}
-
 			}
 
-			template<typename T> T MathVector<T>::getElement(size_t position)
+			template<typename T> T MathVector<T>::getElement(size_t position) const
 			{
-				if (this->not_nulls.find(position) == this->not_nulls.end())
+				typename std::unordered_map<size_t, T>::const_iterator elem_it = this->data.find(position);
+				if (elem_it == this->data.end())
 				{
 					return 0;
 				}
 				else
 				{
-					return data.find(position)->second;
+					return elem_it->second;
 				}
 			}
 
 			template<typename T> T MathVector<T>::getMaximalElement()
 			{
-				fast_iterator position = std::max_element(this->data.begin(), this->data.end(), predicate());
+				typename std::unordered_map<size_t, T>::iterator position = std::max_element(this->data.begin(), this->data.end(), predicate());
 
 				if (position == this->data.end() ||
 					position->second < 0)
@@ -293,7 +266,7 @@ namespace MathCore
 				{
 					this->not_nulls.insert(this->size - 1);
 
-					this->data[this->size - 1] = element;
+					this->data.insert(std::make_pair(this->size - 1, element));
 				}
 
 				return;
@@ -315,7 +288,7 @@ namespace MathCore
 						backIt--;
 						this->not_nulls.erase(backIt);
 						poppedElement = this->data.at(this->size);
-						typename std::map<size_t, T>::iterator it = this->data.end();
+						typename std::unordered_map<size_t, T>::iterator it = this->data.end();
 						this->data.erase(--it);
 					}
 					else
@@ -337,7 +310,7 @@ namespace MathCore
 					for (size_t index = begin; index < this->size; ++index)
 					{
 						this->not_nulls.insert(index);
-						this->data[index] = _value;
+						this->data.insert(std::make_pair(index,  _value));
 					}
 				}
 			}
@@ -351,7 +324,7 @@ namespace MathCore
 
 				if (element != 0)
 				{
-					typename std::map<size_t, T>::iterator pos_it = this->data.find(position);
+					typename std::unordered_map<size_t, T>::iterator pos_it = this->data.find(position);
 					if (pos_it != this->data.end())
 						pos_it->second = element;
 					else
@@ -366,16 +339,16 @@ namespace MathCore
 
 			template<typename T> size_t  MathVector<T>::first_not_null()
 			{
-				std::map<size_t, int>::iterator begin = this->data.begin();
+				std::set<size_t>::iterator begin = this->not_nulls.begin();
 
-				return begin->first;
+				return this->data.find(*begin)->second;
 			}
 
 			template<typename T> size_t  MathVector<T>::last_not_null()
 			{
-				std::map<size_t, int>::iterator end = this->data.end();
+				std::set<size_t>::iterator end = this->not_nulls.end();
 
-				return end->first;
+				return this->data.find(*end)->second;
 			}
 
 			template<typename T> const size_t&  MathVector<T>::getSize() const
@@ -392,30 +365,30 @@ namespace MathCore
 			{
 				std::vector<T>* converted = new std::vector<T>(this->size, 0);
 
-				typename std::map<size_t, T>::iterator begin = this->data.begin();
-				typename std::map<size_t, T>::iterator end = this->data.end();
+				typename std::set<size_t>::iterator begin = this->not_nulls.begin();
+				typename std::set<size_t>::iterator end = this->not_nulls.end();
 
 				for (; begin != end; ++begin)
 				{
-					converted->at(begin->first) = begin->second;
+					converted->at(*begin) = this->data.find(*begin)->second;
 				}
 
 				return *converted;
 			}
 
 
-            template<typename T> T MathVector<T>:: update(T factor, const MathVector<T>& other)
+            template<typename T> T MathVector<T>::update(T factor, const MathVector<T>& other)
             {
                 T difference = 0.0;
-		        MathVector<T>::const_fast_iterator it = other.fast_begin();
-		        MathVector<T>::const_fast_iterator end = other.fast_end();
+		        MathVector<T>::const_fast_iterator it = other.const_fast_begin();
+		        MathVector<T>::const_fast_iterator end = other.const_fast_end();
 
 		        for (; it != end; ++it)
 		        {
-                    T value = this->getElement(it->first);
-			        T new_value = value + factor * it->second;
+                    T value = this->getElement(it.index());
+			        T new_value = value + factor * it.getElem();
 			        difference += pow(abs(new_value - value), 2.);
-			        this->insert(new_value, it->first);
+			        this->insert(new_value, it.index());
 		        }
 
                 return difference;
@@ -433,27 +406,28 @@ namespace MathCore
 				{
 					if (this->not_nulls.size() > other.not_nulls.size())
 					{
-						MathVector<T>::const_fast_iterator it = other.fast_begin();
+						MathVector<T>::const_fast_iterator it  = other.const_fast_begin();
+						MathVector<T>::const_fast_iterator end = other.const_fast_end();
 
-						for (; it != other.fast_end(); ++it)
+						for (; it != end; ++it)
 						{
-							if (this->not_nulls.find(it->first)
+							if (this->not_nulls.find(it.index())
 								!= this->not_nulls.end())
 							{
-								result += it->second * this->data.at(it->first);
+								result += it.getElem() * this->data.at(it.index());
 							}
 						}
 					}
 					else
 					{
-						MathVector<T>::fast_iterator it = this->fast_begin();
-
-						for (; it != this->fast_end(); ++it)
+						MathVector<T>::fast_iterator it  = this->fast_begin();
+						MathVector<T>::fast_iterator end = this->fast_end(); 
+						for (; it != end; ++it)
 						{
-							if (other.not_nulls.find(it->first)
+							if (other.not_nulls.find(it.index())
 								!= other.not_nulls.end())
 							{
-								result += it->second * other.data.at(it->first);
+								result += it.getElem() * other.data.at(it.index());
 							}
 						}
 					}
@@ -461,35 +435,35 @@ namespace MathCore
 				else
 				{
 					fast_iterator firstBegin = this->fast_begin();
-					const_fast_iterator secondBegin = other.fast_begin();
+					fast_iterator firstEnd   = this->fast_end();
+					const_fast_iterator secondBegin = other.const_fast_begin();
+					const_fast_iterator secondEnd   = other.const_fast_end();
 
-					while (firstBegin != this->fast_end() || secondBegin != other.fast_end())
+					while (firstBegin != firstEnd || secondBegin != secondEnd)
 					{
+						if (firstBegin == firstEnd)
+						{
+							++secondBegin;
+						}
+						else if (secondBegin == secondEnd)
+						{
+							++firstBegin;
+						}
+						else if (firstBegin.index() == secondBegin.index())
+						{
+							result += firstBegin.getElem() * secondBegin.getElem();
 
-						if (firstBegin == this->fast_end())
-						{
-							secondBegin++;
+							++firstBegin;
+							++secondBegin;
 						}
-						else if (secondBegin == other.fast_end())
+						else if (firstBegin.index() > secondBegin.index())
 						{
-							firstBegin++;
+							++secondBegin;
 						}
-						else if (firstBegin->first == secondBegin->first)
+						else if (firstBegin.index() < secondBegin.index())
 						{
-							result += firstBegin->second * secondBegin->second;
-
-							firstBegin++;
-							secondBegin++;
+							++firstBegin;
 						}
-						else if (firstBegin->first > secondBegin->first)
-						{
-							secondBegin++;
-						}
-						else if (firstBegin->first < secondBegin->first)
-						{
-							firstBegin++;
-						}
-
 					}
 				}
 
@@ -504,7 +478,6 @@ namespace MathCore
 				{
 					result.data.clear();
 					result.not_nulls.clear();
-
 				}
 				else
 				{
@@ -513,10 +486,10 @@ namespace MathCore
 
 					for (; begin != end; ++begin)
 					{
-						begin->second *= value;
+						 T new_value = begin.getElem() * value;
+						 begin.setElement(new_value);
 					}
 				}
-
 				return result;
 			}
 
@@ -535,10 +508,10 @@ namespace MathCore
 
 					for (; begin != end; ++begin)
 					{
-						*begin /= value;
+						T new_value = begin.getElem() / value;
+						begin.setElement(new_value);
 					}
 				}
-
 				return result;
 			}
 
@@ -555,22 +528,21 @@ namespace MathCore
 
 					for (size_t index = 0; index < dataSize; ++index)
 					{
-						size_t newValue = dataIterator->second + value;
-
+						size_t newValue = dataIterator.getElem() + value;
+						size_t dataIndex = dataIterator.index();
 						if (value == 0)
 						{
-							result.not_nulls.erase(result.not_nulls.find(dataIterator->first));
-							result.data.erase(dataIterator);
+							result.not_nulls.erase(result.not_nulls.find(dataIndex));
+							result.data.erase(result.data.find(dataIndex));
 							dataIterator++;
 						}
 						else
 						{
-							result.not_nulls.insert(dataIterator->first);
-							result.data[dataIterator->first] = newValue;
+							result.not_nulls.insert(dataIndex);
+							result.data[dataIndex] = newValue;
 						}
 					}
 				}
-
 				return result;
 			}
 
@@ -588,17 +560,17 @@ namespace MathCore
 					for (size_t index = 0; index < dataSize; ++index)
 					{
 						size_t newValue = dataIterator->second - value;
-
+						size_t dataIndex = dataIterator.index();
 						if (value == 0)
 						{
-							result.not_nulls.erase(result.not_nulls.find(dataIterator->first));
-							result.data.erase(dataIterator);
+							result.not_nulls.erase(result.not_nulls.find(dataIndex));
+							result.data.erase(result.data.find(dataIndex));
 							dataIterator++;
 						}
 						else
 						{
-							result.not_nulls.insert(dataIterator->first);
-							result.data[dataIterator->first] = newValue;
+							result.not_nulls.insert(dataIndex);
+							result.data[dataIndex] = newValue;
 						}
 					}
 				}
@@ -613,7 +585,6 @@ namespace MathCore
 				{
 					this->data.clear();
 					this->not_nulls.clear();
-
 				}
 				else
 				{
@@ -622,7 +593,8 @@ namespace MathCore
 
 					for (; begin != end; ++begin)
 					{
-						begin->second *= value;
+						T new_value = begin.getElem() * value;
+						begin.setElement(new_value);
 					}
 				}
 
@@ -642,7 +614,8 @@ namespace MathCore
 
 					for (; begin != end; ++begin)
 					{
-						begin->second /= value;
+						T new_value = begin.getElem() / value;
+						begin.setElement(new_value);
 					}
 				}
 
@@ -664,17 +637,16 @@ namespace MathCore
 
 						if (value == 0)
 						{
-							this->not_nulls.erase(this->not_nulls.find(dataIterator->first));
-							this->data.erase(dataIterator);
+							this->not_nulls.erase(this->not_nulls.find(dataIterator.index()));
+							this->data.erase(this->data.find(dataIterator.index()));
 							dataIterator++;
 						}
 						else
 						{
-							this->not_nulls.insert(dataIterator->first);
-							this->data[dataIterator->first] = newValue;
+							this->not_nulls.insert(dataIterator.index());
+							this->data[dataIterator.index()] = newValue;
 						}
 					}
-
 				}
 
 				return *this;
@@ -695,17 +667,16 @@ namespace MathCore
 
 						if (value == 0)
 						{
-							this->not_nulls.erase(this->not_nulls.find(dataIterator->first));
-							this->data.erase(dataIterator);
+							this->not_nulls.erase(this->not_nulls.find(dataIterator.index()));
+							this->data.erase(this->data.find(dataIterator.index()));
 							dataIterator++;
 						}
 						else
 						{
-							this->not_nulls.insert(dataIterator->first);
+							this->not_nulls.insert(dataIterator);
 							this->data[dataIterator->first] = newValue;
 						}
 					}
-
 				}
 
 				return *this;
@@ -720,12 +691,12 @@ namespace MathCore
 					if (this->not_nulls.size() > other.not_nulls.size())
 					{
 						MathVector<T> result(*this);
-						MathVector<T>::const_fast_iterator it = other.fast_begin();
-
-						for (; it != other.fast_end(); ++it)
+						MathVector<T>::const_fast_iterator it = other.const_fast_begin();
+						MathVector<T>::const_fast_iterator end = other.const_fast_end();
+						for (; it != end; ++it)
 						{
-						    T value = it->second + result.getElement(it->first);
-							result.insert(value, it->first);
+						    T value = it.getElem() + result.getElement(it.index());
+							result.insert(value, it.index());
 						}
 
 						return result;
@@ -733,12 +704,12 @@ namespace MathCore
 					else
 					{
 					    MathVector<T> result(other);
-						MathVector<T>::fast_iterator it = this->fast_begin();
-
-						for (; it != this->fast_end(); ++it)
+						MathVector<T>::fast_iterator it  = this->fast_begin();
+						MathVector<T>::fast_iterator end = this->fast_end();
+						for (; it != end; ++it)
 						{
-							T value = it->second + result.getElement(it->first);
-							result.insert(value, it->first);
+							T value = it.getElem() + result.getElement(it.index());
+							result.insert(value, it.index());
 						}
 
 						return result;
@@ -748,40 +719,42 @@ namespace MathCore
 				{
 					MathVector<T> result(this->size, 0);
 					fast_iterator firstBegin = this->fast_begin();
-					const_fast_iterator secondBegin = other.fast_begin();
+					fast_iterator firstEnd   = this->fast_end();
+					const_fast_iterator secondBegin = other.const_fast_begin();
+					const_fast_iterator secondEnd   = other.const_fast_end();
 
-					while (firstBegin != this->fast_end() || secondBegin != other.fast_end())
+					while (firstBegin != firstEnd || secondBegin != secondEnd)
 					{
-						if (firstBegin == this->fast_end())
+						if (firstBegin == firstEnd)
 						{
-							T newvalue = secondBegin->second;
-							result.insert(newvalue, secondBegin->first);
-							secondBegin++;
+							T newvalue = secondBegin.getElem();
+							result.insert(newvalue, secondBegin.index());
+							++secondBegin;
 						}
-						else if (secondBegin == other.fast_end())
+						else if (secondBegin == secondEnd)
 						{
-							T newvalue = firstBegin->second;
-							result.insert(newvalue, firstBegin->first);
-							firstBegin++;
+							T newvalue = firstBegin.getElem();
+							result.insert(newvalue, firstBegin.index());
+							++firstBegin;
 						}
-						else if (firstBegin->first == secondBegin->first)
+						else if (firstBegin.index() == secondBegin.index())
 						{
-							T newvalue = firstBegin->second + secondBegin->second;
-							result.insert(newvalue, firstBegin->first);
-							firstBegin++;
-							secondBegin++;
+							T newvalue = firstBegin.getElem() + secondBegin.getElem();
+							result.insert(newvalue, firstBegin.index());
+							++firstBegin;
+							++secondBegin;
 						}
-						else if (firstBegin->first > secondBegin->first)
+						else if (firstBegin.index() > secondBegin.index())
 						{
-							T newvalue = secondBegin->second;
-							result.insert(newvalue, secondBegin->first);
-							secondBegin++;
+							T newvalue = secondBegin.getElem();
+							result.insert(newvalue, secondBegin.index());
+							++secondBegin;
 						}
-						else if (firstBegin->first < secondBegin->first)
+						else if (firstBegin.index() < secondBegin.index())
 						{
-							T newvalue = firstBegin->second;
-							result.insert(newvalue, firstBegin->first);
-							firstBegin++;
+							T newvalue = firstBegin.getElem();
+							result.insert(newvalue, firstBegin.index());
+							++firstBegin;
 						}
 					}
 
@@ -799,85 +772,88 @@ namespace MathCore
 				{
 					if (this->not_nulls.size() > other.not_nulls.size())
 					{
-						MathVector<T>::const_fast_iterator it = other.fast_begin();
+						MathVector<T>::const_fast_iterator it = other.const_fast_begin();
+						MathVector<T>::const_fast_iterator end = other.const_fast_end();
 
-						for (; it != other.fast_end(); ++it)
+						for (; it != end; ++it)
 						{
-							T value = this->data.at(it->first) - it->second;
-							result.insert(value, it->first);
+							T value = this->getElement(it.index()) - it.getElem();
+							result.insert(value, it.index());
 						}
 					}
 					else
 					{
-						MathVector<T>::fast_iterator it = this->fast_begin();
-
-						for (; it != this->fast_end(); ++it)
+						MathVector<T>::fast_iterator it  = this->fast_begin();
+						MathVector<T>::fast_iterator end = this->fast_end(); 
+						for (; it != end; ++it)
 						{
-							T value = it->second - other.data.at(it->first);
-							result.insert(value, it->first);
+							T value = it.getElem() - other.getElement(it.index());
+							result.insert(value, it.index());
 						}
 					}
 				}
 				else
 				{
 					fast_iterator firstBegin = this->fast_begin();
-					const_fast_iterator secondBegin = other.fast_begin();
+					fast_iterator firstEnd   = this->fast_end();
+					const_fast_iterator secondBegin = other.const_fast_begin();
+					const_fast_iterator secondEnd   = other.const_fast_end();
 
-					while (firstBegin != this->fast_end() || secondBegin != other.fast_end())
+					while (firstBegin != firstEnd || secondBegin != secondEnd)
 					{
-						if (firstBegin == this->fast_end())
+						if (firstBegin == firstEnd)
 						{
-							T newvalue = (-1.0) * secondBegin->second;
+							T newvalue = (-1.0) * secondBegin.getElem();
 
 							if (newvalue != 0.0)
 							{
-								result.insert(newvalue, secondBegin->first);
+								result.insert(newvalue, secondBegin.index());
 							}
-							secondBegin++;
+							++secondBegin;
 						}
-						else if (secondBegin == other.fast_end())
+						else if (secondBegin == secondEnd)
 						{
-							T newvalue = firstBegin->second;
+							T newvalue = firstBegin.getElem();
 
 							if (newvalue != 0.0)
 							{
-								result.insert(newvalue, firstBegin->first);
+								result.insert(newvalue, firstBegin.index());
 							}
-							firstBegin++;
+							++firstBegin;
 						}
-						else if (firstBegin->first == secondBegin->first)
+						else if (firstBegin.index() == secondBegin.index())
 						{
-							T newvalue = firstBegin->second - secondBegin->second;
+							T newvalue = firstBegin.getElem() - secondBegin.getElem();
 
 							if (newvalue != 0.0)
 							{
-								result.insert(newvalue, firstBegin->first);
+								result.insert(newvalue, firstBegin.index());
 							}
 
-							firstBegin++;
-							secondBegin++;
+							++firstBegin;
+							++secondBegin;
 						}
-						else if (firstBegin->first > secondBegin->first)
+						else if (firstBegin.index() > secondBegin.index())
 						{
-							T newvalue = (-1.0) * secondBegin->second;
+							T newvalue = (-1.0) * secondBegin.getElem();
 
 							if (newvalue != 0.0)
 							{
-								result.insert(newvalue, secondBegin->first);
+								result.insert(newvalue, secondBegin.index());
 							}
 
-							secondBegin++;
+							++secondBegin;
 						}
-						else if (firstBegin->first < secondBegin->first)
+						else if (firstBegin.index() < secondBegin.index())
 						{
-							T newvalue = firstBegin->second;
+							T newvalue = firstBegin.getElem();
 
 							if (newvalue != 0.0)
 							{
-								result.insert(newvalue, firstBegin->first);
+								result.insert(newvalue, firstBegin.index());
 							}
 
-							firstBegin++;
+							++firstBegin;
 						}
 					}
 				}
@@ -886,138 +862,195 @@ namespace MathCore
 
 			template<typename T> MathVector<T>& MathVector<T>::operator+=(const MathVector<T>& other)
 			{
-				fast_iterator firstBegin = this->fast_begin();
-				const_fast_iterator secondBegin = other.fast_begin();
+				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
+				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
 
-				std::map<size_t, T> newValues;
-				std::set<size_t> newNotNulls;
-
-				while (firstBegin != this->fast_end() || secondBegin != other.fast_end())
+				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
-					if (firstBegin == this->fast_end())
+					if (this->not_nulls.size() > other.not_nulls.size())
 					{
-						T newvalue = secondBegin->second;
+						MathVector<T>::const_fast_iterator it = other.const_fast_begin();
+						MathVector<T>::const_fast_iterator end = other.const_fast_end();
 
-						newNotNulls.insert(secondBegin->first);
-						newValues[secondBegin->first] = newvalue;
-
-						secondBegin++;
-					}
-					else if (secondBegin == other.fast_end())
-					{
-						T newvalue = firstBegin->second;
-
-						newNotNulls.insert(firstBegin->first);
-						newValues[firstBegin->first] = newvalue;
-
-						firstBegin++;
-					}
-					else if (firstBegin->first == secondBegin->first)
-					{
-						T newvalue = firstBegin->second + secondBegin->second;
-
-						if (newvalue != 0)
+						for (; it != end; ++it)
 						{
-							newNotNulls.insert(firstBegin->first);
-							newValues[firstBegin->first] = newvalue;
+							T value = this->getElement(it.index()) + it.getElem();
+							this->insert(value, it.index());
 						}
-
-						firstBegin++;
-						secondBegin++;
 					}
-					else if (firstBegin->first > secondBegin->first)
+					else
 					{
-						T newvalue = secondBegin->second;
-
-						newNotNulls.insert(secondBegin->first);
-						newValues[secondBegin->first] = newvalue;
-
-						secondBegin++;
+						MathVector<T>::fast_iterator it  = this->fast_begin();
+						MathVector<T>::fast_iterator end = this->fast_end(); 
+						for (; it != end; ++it)
+						{
+							T value = it.getElem() + other.getElement(it.index());
+							this->insert(value, it.index());
+						}
 					}
-					else if (firstBegin->first < secondBegin->first)
-					{
-						T newvalue = firstBegin->second;
-
-						newNotNulls.insert(firstBegin->first);
-						newValues[firstBegin->first] = newvalue;
-
-						firstBegin++;
-					}
-
 				}
+				else
+				{
+					fast_iterator firstBegin = this->fast_begin();
+					fast_iterator firstEnd   = this->fast_end();
+					const_fast_iterator secondBegin = other.const_fast_begin();
+					const_fast_iterator secondEnd   = other.const_fast_end();
 
-				this->not_nulls = newNotNulls;
-				this->data = newValues;
+					while (firstBegin != firstEnd || secondBegin != secondEnd)
+					{
+						if (firstBegin == firstEnd)
+						{
+							T newvalue = secondBegin.getElem();
 
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, secondBegin.index());
+							}
+							++secondBegin;
+						}
+						else if (secondBegin == secondEnd)
+						{
+							T newvalue = firstBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+							++firstBegin;
+						}
+						else if (firstBegin.index() == secondBegin.index())
+						{
+							T newvalue = firstBegin.getElem() + secondBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+
+							++firstBegin;
+							++secondBegin;
+						}
+						else if (firstBegin.index() > secondBegin.index())
+						{
+							T newvalue = secondBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, secondBegin.index());
+							}
+
+							++secondBegin;
+						}
+						else if (firstBegin.index() < secondBegin.index())
+						{
+							T newvalue = firstBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+
+							++firstBegin;
+						}
+					}
+				}
 				return *this;
 			}
 
 			template<typename T> MathVector<T>& MathVector<T>::operator-=(const MathVector<T>& other)
 			{
+				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
+				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
 
-				fast_iterator firstBegin = this->fast_begin();
-				const_fast_iterator secondBegin = other.fast_begin();
-
-				std::map<size_t, T> newValues;
-				std::set<size_t> newNotNulls;
-
-				while (firstBegin != this->fast_end() || secondBegin != other.fast_end())
+				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
-					if (firstBegin == this->fast_end())
+					if (this->not_nulls.size() > other.not_nulls.size())
 					{
-						T newvalue = -secondBegin->second;
+						MathVector<T>::const_fast_iterator it = other.const_fast_begin();
+						MathVector<T>::const_fast_iterator end = other.const_fast_end();
 
-						newNotNulls.insert(secondBegin->first);
-						newValues[secondBegin->first] = newvalue;
-
-						secondBegin++;
-					}
-					else if (secondBegin == other.fast_end())
-					{
-						T newvalue = -firstBegin->second;
-
-						newNotNulls.insert(firstBegin->first);
-						newValues[firstBegin->first] = newvalue;
-
-						firstBegin++;
+						for (; it != end; ++it)
+						{
+							T value = this->getElement(it.index()) - it.getElem();
+							this->insert(value, it.index());
+						}
 					}
 					else
-						if (firstBegin->first == secondBegin->first)
+					{
+						MathVector<T>::fast_iterator it  = this->fast_begin();
+						MathVector<T>::fast_iterator end = this->fast_end(); 
+						for (; it != end; ++it)
 						{
-						T newvalue = firstBegin->second - secondBegin->second;
-
-						if (newvalue != 0)
-						{
-							newNotNulls.insert(firstBegin->first);
-							newValues[firstBegin->first] = newvalue;
+							T value = it.getElem() - other.getElement(it.index());
+							this->insert(value, it.index());
 						}
-
-						firstBegin++;
-						secondBegin++;
-						}
-						else if (firstBegin->first > secondBegin->first)
-						{
-							T newvalue = -secondBegin->second;
-
-							newNotNulls.insert(secondBegin->first);
-							newValues[secondBegin->first] = newvalue;
-
-							secondBegin++;
-						}
-						else if (firstBegin->first < secondBegin->first)
-						{
-							T newvalue = -firstBegin->second;
-
-							newNotNulls.insert(firstBegin->first);
-							newValues[firstBegin->first] = newvalue;
-
-							firstBegin++;
-						}
+					}
 				}
+				else
+				{
+					fast_iterator firstBegin = this->fast_begin();
+					fast_iterator firstEnd   = this->fast_end();
+					const_fast_iterator secondBegin = other.const_fast_begin();
+					const_fast_iterator secondEnd   = other.const_fast_end();
 
-				this->not_nulls = newNotNulls;
-				this->data = newValues;
+					while (firstBegin != firstEnd || secondBegin != secondEnd)
+					{
+						if (firstBegin == firstEnd)
+						{
+							T newvalue = (-1.0) * secondBegin.getElem();
 
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, secondBegin.index());
+							}
+							++secondBegin;
+						}
+						else if (secondBegin == secondEnd)
+						{
+							T newvalue = firstBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+							++firstBegin;
+						}
+						else if (firstBegin.index() == secondBegin.index())
+						{
+							T newvalue = firstBegin.getElem() - secondBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+
+							++firstBegin;
+							++secondBegin;
+						}
+						else if (firstBegin.index() > secondBegin.index())
+						{
+							T newvalue = (-1.0) * secondBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, secondBegin.index());
+							}
+
+							++secondBegin;
+						}
+						else if (firstBegin.index() < secondBegin.index())
+						{
+							T newvalue = firstBegin.getElem();
+
+							if (newvalue != 0.0)
+							{
+								this->insert(newvalue, firstBegin.index());
+							}
+
+							++firstBegin;
+						}
+					}
+				}
 				return *this;
 			}
 

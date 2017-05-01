@@ -601,7 +601,7 @@ namespace MathCore
 					typename MathVector<T>::fast_iterator  end = this->values.at(rowindex).fast_end();
 					for (; it != end; ++it)
 					{
-						values_t.at(it->first).insert(it->second, rowindex);
+						values_t.at(it.index()).insert(it.getElem(), rowindex);
 					}
 				}
 

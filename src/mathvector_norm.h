@@ -52,54 +52,55 @@ namespace MathCore
 					T calc(MathVector<T>& first, MathVector<T>& second)
 					{
 						typename MathVector<T>::fast_iterator firstBegin = first.fast_begin();
-						typename MathVector<T>::fast_iterator secondBegin = second.fast_begin();
+						typename MathVector<T>::fast_iterator firstEnd   = first.fast_end();
 
+						typename MathVector<T>::fast_iterator secondBegin = second.fast_begin();
+						typename MathVector<T>::fast_iterator secondEnd   = second.fast_end();
 
 						T value = 0.;
 
-						while (firstBegin != first.fast_end() || secondBegin != second.fast_end())
+						while (firstBegin != firstEnd || secondBegin != secondEnd)
 						{
-							if (firstBegin == first.fast_end())
+							if (firstBegin == firstEnd)
 							{
-								T newvalue = std::pow(secondBegin->second, 2.);
+								T newvalue = std::pow(secondBegin.getElem(), 2.);
 
 								value += newvalue;
 
-								secondBegin++;
+								++secondBegin;
 							}
-							else if (secondBegin == second.fast_end())
+							else if (secondBegin == secondEnd)
 							{
-								T newvalue = std::pow(firstBegin->second, 2.);
+								T newvalue = std::pow(firstBegin.getElem(), 2.);
 
 								value += newvalue;
 
-								firstBegin++;
+								++firstBegin;
 							}
-							else if (firstBegin->first == secondBegin->first)
+							else if (firstBegin.index() == secondBegin.index())
 							{
-								T newvalue = std::pow(firstBegin->second - secondBegin->second, 2.);
+								T newvalue = std::pow(firstBegin.getElem() - secondBegin.getElem(), 2.);
 
 								value += newvalue;
 
-
-								firstBegin++;
-								secondBegin++;
+								++firstBegin;
+								++secondBegin;
 							}
-							else if (firstBegin->first > secondBegin->first)
+							else if (firstBegin.index() > secondBegin.index())
 							{
-								T newvalue = std::pow(secondBegin->second, 2.);
+								T newvalue = std::pow(secondBegin.getElem(), 2.);
 
 								value += newvalue;
 
-								secondBegin++;
+								++secondBegin;
 							}
-							else if (firstBegin->first < secondBegin->first)
+							else if (firstBegin.index() < secondBegin.index())
 							{
-								T newvalue = std::pow(firstBegin->second, 2.);
+								T newvalue = std::pow(firstBegin.getElem(), 2.);
 
 								value += newvalue;
 
-								firstBegin++;
+								++firstBegin;
 							}
 
 						}

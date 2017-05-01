@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string.h>
+#include <unordered_map>
 
 #ifndef DATA_H
 #include "data.h"
@@ -36,7 +37,7 @@ DataMaxim::DataMaxim()
 void DataMaxim::parseFrom(std::string _data, int feature_count)
 {
 
-	std::map<size_t,float> featuresValue;
+	std::unordered_map<size_t,float> featuresValue;
 
 	if (_data.size() == 0)
 	{

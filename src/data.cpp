@@ -1,5 +1,6 @@
 #include <vector>
 #include <string.h>
+#include <unordered_map>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -98,7 +99,7 @@ void Data::parseFrom(std::string _data)
 
 	boost::split(features, datas.back(), boost::is_any_of(" "));
 
-	std::map<size_t, float> rawFeatures;
+	std::unordered_map<size_t, float> rawFeatures;
 	std::set<size_t> not_nulls;
 
 	for (std::vector<std::string>::iterator it = features.begin(); it != features.end(); ++it)
