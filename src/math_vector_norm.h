@@ -30,7 +30,9 @@ namespace MathCore
             
             float operator()(const MathVector<T>& vector)
             {
-               return (float)applySingleReducer(Maximum<T>,vector);
+				MathVectorOperatorApplier<T, float> applier;
+				auto maximal = Maximal<T, float>;
+               return (float)applier.applySingleReduceOperator(maximal, vector);
             }
         };
 
@@ -71,7 +73,7 @@ namespace MathCore
             
             float operator()(const MathVector<T>& vector)
             {
-               return pow(applySingleReduceOperator(
+               return pow(this->applySingleReduceOperator(
                           [this](float& acc, const T& value) 
                           { DegreeSum(acc, value, m_degree); }
                           , vector)

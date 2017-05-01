@@ -66,14 +66,13 @@ void DataStorageMaximus::parseFromFile(std::string fileName)
 
 		}
 
+		DataMaxim data;
 		while (!fin.eof())
 		{
 			string line;
 			std::getline(fin, line);
-			DataMaxim data;
 			data.parseFrom(line, feature_size);
-			this->datas.push_back(data);
-
+			this->datas.emplace_back(data);
 		}
 	}
 

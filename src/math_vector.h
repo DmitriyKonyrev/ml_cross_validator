@@ -5,6 +5,8 @@
 #include <functional>
 #include <vector>
 #include <map>
+#include <math.h>
+#include <memory>
 #include <stdexcept>
 
 #include "common_vector.h"
@@ -31,11 +33,12 @@ namespace MathCore
             MathVector(const std::map<size_t, T> mapped_values, size_t full_size);
             ~MathVector();
 
-            size_t get_dimension();
-            bool is_zeros();
+            size_t get_dimension() const;
+			size_t getSizeOfNotNullElements() const;
+            bool is_zeros() const;
 
 			T update(T factor, const MathVector<T>& values);
-			T gelElement(size_t position);
+			T getElement(size_t position) const;
 			void insert(T element, size_t position);
 			void extend_data(size_t counts);
 			void clear();
@@ -61,7 +64,7 @@ namespace MathCore
             const MathVector& operator/=(const T& value);
 
         protected:
-            CommonVector<T>* m_vectorData;
+			std::shared_ptr<CommonVector<T>> m_vectorData;
         };
 
         template<typename T> std::function<void (T&, const T&, const T&)> MathVector<T>::vectorSummator = 
@@ -88,32 +91,35 @@ namespace MathCore
 	}
 
 	template<typename T> MathVector<T>::~MathVector()
-	{
-		delete m_vectorData;
-	}
+	{	}
 
-	template<typename T> size_t MathVector<T>::get_dimension()
+	template<typename T> size_t MathVector<T>::get_dimension() const
 	{
 		return m_vectorData->get_size();
 	}
 	
+	template<typename T> size_t MathVector<T>::getSizeOfNotNullElements() const
+	{
+		return m_vectorData->get_not_nulls_count();
+	}
+
 	template<typename T> T MathVector<T>::update(T factor, const MathVector<T>& values)
 	{
 		T difference = (T)0.0;
-		CommonVector<T>::fast_iterator* it = values.m_vectorData->fast_begin();
-		CommonVector<T>::fast_iterator* end = values.m_vectorData->end();
-		for (; (*it) != (*end); (*it)++)
+		typename CommonVector<T>::const_fast_iterator* it = values.m_vectorData->const_fast_begin();
+		typename CommonVector<T>::const_fast_iterator* end = values.m_vectorData->const_fast_end();
+		for (; (*it) != (*end); it->increment())
 		{
 			T value = this->m_vectorData->get_value(it->index());
 			 T new_value = value + factor * it->value();
-			 difference += (T)pow(abs((float)new_value - (float)value), 2.);
-			 this->m_vectorData->update(new_value);
+			 difference += (T)pow(abs((double)new_value - (double)value), 2.);
+			 this->m_vectorData->update(new_value, it->index());
 		}
 
 		return difference;
 	}
 
-	template<typename T> T MathVector<T>::gelElement(size_t position)
+	template<typename T> T MathVector<T>::getElement(size_t position) const
 	{
 		return m_vectorData->get_value(position);
 	}
@@ -133,7 +139,7 @@ namespace MathCore
 		this->m_vectorData->extend(counts);
 	}
 
-        template<typename T> bool MathVector<T>::is_zeros()
+        template<typename T> bool MathVector<T>::is_zeros() const
         {
             return m_vectorData->is_null();
         }
@@ -142,9 +148,7 @@ namespace MathCore
         {
             if (other.get_dimension() == get_dimension())
             {
-                CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorsSummator<T>(m_vectorData, other.vector_data));
-                delete m_vectorData;
-                m_vectorData = newValues;
+				m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorsSummator<T>(m_vectorData, other.m_vectorData));
                 return *this;
             }
             else
@@ -157,9 +161,7 @@ namespace MathCore
         {
             if (other.get_dimension() == get_dimension())
             {
-                CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorsSubtractor<T>(m_vectorData, other.vector_data));
-                delete m_vectorData;
-                m_vectorData = newValues;
+				m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorsSubtractor<T>(m_vectorData, other.m_vectorData));
                 return *this;
             }
             else
@@ -170,33 +172,25 @@ namespace MathCore
 
         template<typename T> const MathVector<T>& MathVector<T>::operator+=(const T& value)
         {
-            CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorIncreaser<T>(m_vectorData, value));
-            delete m_vectorData;
-            m_vectorData = newValues;
+            m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorIncreaser<T>(m_vectorData, value));
             return *this;
         }
 
         template<typename T> const MathVector<T>& MathVector<T>::operator-=(const T& value)
         {
-            CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorDecreaser<T>(m_vectorData, value));
-            delete m_vectorData;
-            m_vectorData = newValues;
+            m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorDecreaser<T>(m_vectorData, value));
             return *this;
         }
 
         template<typename T> const MathVector<T>& MathVector<T>::operator*=(const T& value)
         {
-            CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorMultiplier<T>(m_vectorData, value));
-            delete m_vectorData;
-            m_vectorData = newValues;
+            m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorMultiplier<T>(m_vectorData, value));
             return *this;
         }
 
         template<typename T> const MathVector<T>& MathVector<T>::operator/=(const T& value)
         {
-            CommonVector<T>* newValues = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorDivider<T>(m_vectorData, value));
-            delete m_vectorData;
-            m_vectorData = newValues;
+            m_vectorData = CommonVectorInitializer::InitializeCommonVector<T>(CommonVectorDivider<T>(m_vectorData, value));
             return *this;
         }
 

@@ -16,7 +16,11 @@ namespace MathCore
         {
         public:
             typedef typename CommonVector<T>::fast_iterator base_fast_iterator;
+            typedef typename CommonVector<T>::const_fast_iterator base_const_fast_iterator;
+
             typedef typename std::map<size_t, T>::iterator mapped_iterator;
+            typedef typename std::map<size_t, T>::const_iterator const_mapped_iterator;
+
             //--------iterators--------------
             class fast_iterator
                 : public CommonVector<T>::fast_iterator
@@ -25,11 +29,12 @@ namespace MathCore
                  friend DenseVector<T>;
 
                  typedef fast_iterator self_type;
-                 typedef typename CommonVector<T>::fast_iterator* self_pointer;
+                 typedef const typename CommonVector<T>::fast_iterator* self_pointer;
                  typedef T value_type;
+				 typedef T& reference_type;
 
             protected:
-                fast_iterator(const DenseVector& parent, size_t index=0) 
+                fast_iterator(DenseVector& parent, size_t index=0) 
                     : m_parent(parent) 
                 { 
                    if (index == 0)
@@ -69,7 +74,7 @@ namespace MathCore
                 }
 
             public:
-                self_pointer operator++() 
+                void increment()
                 { 
                     this->m_indexIterator++;
                     if (this->m_indexIterator == this->m_parent.m_notNullIndexes.end())
@@ -80,15 +85,94 @@ namespace MathCore
                     {
                         this->m_index = *this->m_indexIterator;
                     }
-                    return this;
                 }
 
-                value_type operator*()
+
+                reference_type operator*()
                 {
                     return this->m_parent.m_values.at(*(this->m_indexIterator));
                 }
 
-                value_type value()
+                reference_type value()
+                {
+                    return this->m_parent.m_values.at(*(this->m_indexIterator));
+                }
+
+            private:
+                DenseVector& m_parent;
+                std::set<size_t>::iterator m_indexIterator;
+            };
+
+            class const_fast_iterator
+                : public CommonVector<T>::const_fast_iterator
+            {
+            public:
+                 friend DenseVector<T>;
+
+                 typedef const_fast_iterator self_type;
+                 typedef typename CommonVector<T>::const_fast_iterator* self_pointer;
+                 typedef T value_type;
+
+            protected:
+                const_fast_iterator(const DenseVector& parent, size_t index=0) 
+                    : m_parent(parent) 
+                { 
+                   if (index == 0)
+                   {
+                        this->m_indexIterator = m_parent.m_notNullIndexes.begin();
+                        this->m_index = *(this->m_indexIterator);
+                   } 
+                   else if (index == this->m_parent.m_size)
+                   {
+                        this->m_indexIterator = this->m_parent.m_notNullIndexes.end();
+                        this->m_index = this->m_parent.m_size;
+                   }
+                   else
+                   {
+                        if (this->m_parent.m_values.at(index) == 0)
+                        {
+                            for (this->m_indexIterator = this->m_parent.m_notNullIndexes.begin();
+                                 this->m_indexIterator != this->m_parent.m_notNullIndexes.end();
+                                 this->m_indexIterator++)
+                            {
+                                if (*(this->m_indexIterator) > index)
+                                {
+                                    this->m_index = *(this->m_indexIterator);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            this->m_index = index;
+                            this->m_indexIterator 
+                                = std::find(this->m_parent.m_notNullIndexes.begin(), 
+                                            this->m_parent.m_notNullIndexes.end(), 
+                                            index);
+                        }
+                   }
+                }
+
+            public:
+                void increment()
+                { 
+                    this->m_indexIterator++;
+                    if (this->m_indexIterator == this->m_parent.m_notNullIndexes.end())
+                    {
+                        this->m_index = this->m_parent.m_size;
+                    }
+                    else
+                    {
+                        this->m_index = *this->m_indexIterator;
+                    }
+                }
+
+                value_type operator*() const
+                {
+                    return this->m_parent.m_values.at(*(this->m_indexIterator));
+                }
+
+                value_type value() const
                 {
                     return this->m_parent.m_values.at(*(this->m_indexIterator));
                 }
@@ -97,6 +181,7 @@ namespace MathCore
                 const DenseVector& m_parent;
                 std::set<size_t>::const_iterator m_indexIterator;
             };
+
 
         public:
             DenseVector(size_t size, T default_value=0)
@@ -129,7 +214,7 @@ namespace MathCore
                 : CommonVector<T>(mapped_values, full_size)
             {
                 m_values = std::vector<T>(full_size, (T)0);
-                mapped_iterator notNullValue;
+                const_mapped_iterator notNullValue;
                 size_t full_index = 0;
                 for (notNullValue = mapped_values.begin();
                      notNullValue != mapped_values.end();
@@ -148,9 +233,13 @@ namespace MathCore
 				else
 				{
 					this->m_values[index] = value;
-					this->m_notNullIndexes,insert(index);
+					this->m_notNullIndexes.insert(index);
 				}
+			}
 
+			size_t get_not_nulls_count()
+			{
+				return m_notNullIndexes.size();
 			}
 
             bool is_null()
@@ -190,6 +279,16 @@ namespace MathCore
             base_fast_iterator* fast_end()
             {
                 return new fast_iterator(*this, this->m_size);
+            }
+
+            base_const_fast_iterator* const_fast_begin() const
+            {
+                return new const_fast_iterator(*this, 0);
+            }
+
+            base_const_fast_iterator* const_fast_end() const
+            {
+                return new const_fast_iterator(*this, this->m_size);
             }
 
         private:

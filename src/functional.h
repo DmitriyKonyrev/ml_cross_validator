@@ -4,23 +4,23 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
+#include <memory>
 
 #include "common_vector.h"
-
 
 namespace MathCore
 {
     namespace AlgebraCore
     {
             template<typename T, typename R> R SingleReducer(std::function<void (R&, const T&)> reduce_operator,
-                                                 const CommonVector<T>* data,
+                                                 const std::shared_ptr<CommonVector<T>>& data,
                                                  R initial_value = (R)0)
             {
-                typename CommonVector<T>::fast_iterator* data_it = data->fast_begin();
-                typename CommonVector<T>::fast_iterator* data_end = data->fast_end();
+				typename CommonVector<T>::const_fast_iterator* data_it = data->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* data_end = data->const_fast_end();
 
                 R accumulator = initial_value;
-                for (; (*data_it) != (*data_end); (*data_it)++)
+                for (; (*data_it) != (*data_end); data_it->increment())
                 {
                     reduce_operator(accumulator, data_it->value());
                 }
@@ -29,15 +29,15 @@ namespace MathCore
             } 
 
             template<typename T, typename R> R PairReducer(std::function<void (R&, const T&, const T&)> reduce_operator,
-                                               const CommonVector<T>* left,
-                                               const CommonVector<T>* right,
+                                               const std::shared_ptr<CommonVector<T>>& left,
+                                               const std::shared_ptr<CommonVector<T>>& right,
                                                R initial_value = (R)0)
             {
-                typename CommonVector<T>::fast_iterator* left_it = left->fast_begin();
-                typename CommonVector<T>::fast_iterator* left_end = left->fast_end();
+                typename CommonVector<T>::const_fast_iterator* left_it = left->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* left_end = left->const_fast_end();
                 
-                typename CommonVector<T>::fast_iterator* right_it = right->fast_begin();
-                typename CommonVector<T>::fast_iterator* right_end = right->fast_end();
+                typename CommonVector<T>::const_fast_iterator* right_it = right->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* right_end = right->const_fast_end();
 
                 R accumulator = initial_value;
 
@@ -46,30 +46,30 @@ namespace MathCore
                     if ((*left_it) == (*left_end))
                     {
                         reduce_operator(accumulator, T(0), right_it->value());
-                        (*right_it)++;
+                        right_it->increment();
                     }
                     else if ((*right_it) == (*right_end))
                     {
                         reduce_operator(accumulator, left_it->value(), (T)0);
-                        (*left_it)++;
+                        left_it->increment();
                     }
                     else
                     {
                         if ((*left_it) == (*right_it))
                         {
                             reduce_operator(accumulator, left_it->value(), right_it->value());
-                            (*left_it)++;
-                            (*right_it)++; 
+                            left_it->increment();
+                            right_it->increment(); 
                         }
                         else if ((*left_it) < (*right_it))
                         {
                             reduce_operator(accumulator, left_it->value(), (T)0);
-                            (*left_it)++;
+                            left_it->increment();
                         }
                         else
                         {
                             reduce_operator(accumulator, T(0), right_it->value());
-                            (*right_it)++;
+                            right_it->increment();
                         }
                     }
                 }
@@ -78,14 +78,14 @@ namespace MathCore
             } 
 
             template<typename T, typename R> std::vector<R> SingleMapper(std::function<R (const T&)> map_operator,
-                                                             const CommonVector<T>* data)
+                                                             const std::shared_ptr<CommonVector<T>>& data)
             {
-                typename CommonVector<T>::fast_iterator* data_it = data->fast_begin();
-                typename CommonVector<T>::fast_iterator* data_end = data->fast_end();
+                typename CommonVector<T>::const_fast_iterator* data_it = data->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* data_end = data->const_fast_end();
 
                 std::vector<R> map_data(data->get_size(), (R)0);
 
-                for (; (*data_it) != (*data_end); (*data_it)++)
+                for (; (*data_it) != (*data_end); data_it->increment())
                 {
                     map_data.at(data_it->index()) = map_operator(data_it->value());
                 }
@@ -94,14 +94,14 @@ namespace MathCore
             } 
 
             template<typename T, typename R> std::vector<R> PairMapper(std::function<R (const T&, const T&)> map_operator,
-                                                           const CommonVector<T>* left,
-                                                           const CommonVector<T>* right)
+                                                           const std::shared_ptr<CommonVector<T>>& left,
+                                                           const std::shared_ptr<CommonVector<T>>& right)
             {
-                typename CommonVector<T>::fast_iterator* left_it = left->fast_begin();
-                typename CommonVector<T>::fast_iterator* left_end = left->fast_end();
+                typename CommonVector<T>::const_fast_iterator* left_it = left->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* left_end = left->const_fast_end();
                 
-                typename CommonVector<T>::fast_iterator* right_it = right->fast_begin();
-                typename CommonVector<T>::fast_iterator* right_end = right->fast_end();
+                typename CommonVector<T>::const_fast_iterator* right_it = right->const_fast_begin();
+                typename CommonVector<T>::const_fast_iterator* right_end = right->const_fast_end();
     
                 size_t real_size = std::max(left->get_size(), right->get_size());
                 std::vector<R> map_data(real_size, (R)0);
@@ -111,30 +111,30 @@ namespace MathCore
                     if ((*left_it) == (*left_end))
                     {
                         map_data.at(right_it->index()) = map_operator(T(0), right_it->value());
-                        (*right_it)++;
+                        right_it->increment();
                     }
                     else if ((*right_it) == (*right_end))
                     {
                         map_data.at(left_it->index()) = map_operator(left_it->value(), (T)0);
-                        (*left_it)++;
+                        left_it->increment();
                     }
                     else
                     {
                         if ((*left_it) == (*right_it))
                         {
                             map_data.at(left_it->index()) = map_operator(left_it->value(), right_it->value());
-                            (*left_it)++;
-                            (*right_it)++; 
+                            left_it->increment();
+                            right_it->increment(); 
                         }
                         else if ((*left_it) < (*right_it))
                         {
                             map_data.at(right_it->index()) = map_operator(T(0), right_it->value());
-                            (*right_it)++;
+                            right_it->increment();
                         }
                         else
                         {
                             map_data.at(left_it->index()) = map_operator(left_it->value(), (T)0);
-                            (*left_it)++;
+                            left_it->increment();
                         }
                     }
                 }
@@ -143,8 +143,8 @@ namespace MathCore
             }
            
             template<typename T> bool FastComparator(std::function<bool(const T&, const T&)> comparator,
-                    const CommonVector<T>* left,
-                    const CommonVector<T>* right)
+                    const std::shared_ptr<CommonVector<T>>& left,
+                    const std::shared_ptr<CommonVector<T>>& right)
             {
                 typename CommonVector<T>::fast_iterator* left_it = left->fast_begin();
                 typename CommonVector<T>::fast_iterator* left_end = left->fast_end();
@@ -195,7 +195,7 @@ namespace MathCore
                 return left == right;
             }
 
-            template<typename T> bool CommonVectorsEqualityChecker(const CommonVector<T>* left, const CommonVector<T>* right)
+            template<typename T> bool CommonVectorsEqualityChecker(const std::shared_ptr<CommonVector<T>>& left, const std::shared_ptr<CommonVector<T>>& right)
             {
                 return FastComparator<T>(ValuesEquality<T>, left, right); 
             }
@@ -205,7 +205,7 @@ namespace MathCore
                 return left + right; 
             };
 
-            template<typename T> std::vector<T> CommonVectorsSummator(const CommonVector<T>* left, const CommonVector<T>* right)
+            template<typename T> std::vector<T> CommonVectorsSummator(const std::shared_ptr<CommonVector<T>>& left, const std::shared_ptr<CommonVector<T>>& right)
             { 
                 return PairMapper<T,T>(PairSummator<T>, left, right); 
             };
@@ -215,7 +215,7 @@ namespace MathCore
                 return left - right; 
             };
 
-            template<typename T> std::vector<T> CommonVectorsSubtractor(const CommonVector<T>* left, const CommonVector<T>* right)
+            template<typename T> std::vector<T> CommonVectorsSubtractor(const std::shared_ptr<CommonVector<T>>& left, const std::shared_ptr<CommonVector<T>>& right)
             { 
                 return PairMapper<T,T>(PairSubtractor<T>, left, right); 
             };
@@ -240,22 +240,22 @@ namespace MathCore
                 return vectorValue / value;
             }
 
-            template<typename T> std::vector<T> CommonVectorIncreaser(const CommonVector<T>* data, const T& value)
+            template<typename T> std::vector<T> CommonVectorIncreaser(const std::shared_ptr<CommonVector<T>>& data, const T& value)
             {
                 return SingleMapper<T,T>([value](const T& v)->T { return ValueIncreaser<T>(v, value);}, data);
             }
 
-            template<typename T> std::vector<T> CommonVectorDecreaser(const CommonVector<T>* data, const T& value)
+            template<typename T> std::vector<T> CommonVectorDecreaser(const std::shared_ptr<CommonVector<T>>& data, const T& value)
             {
                 return SingleMapper<T,T>([value](const T& v)->T { return ValueDecreaser<T>(v, value);}, data);
             }
 
-            template<typename T> std::vector<T> CommonVectorMultiplier(const CommonVector<T>* data, const T& value)
+            template<typename T> std::vector<T> CommonVectorMultiplier(const std::shared_ptr<CommonVector<T>>& data, const T& value)
             {
                 return SingleMapper<T,T>([value](const T& v)->T { return ValueMultiplier<T>(v, value);}, data);
             }
 
-            template<typename T> std::vector<T> CommonVectorDivider(const CommonVector<T>* data, const T& value)
+            template<typename T> std::vector<T> CommonVectorDivider(const std::shared_ptr<CommonVector<T>>& data, const T& value)
             {
                 return SingleMapper<T,T>([value](const T& v)->T { return ValueDivider<T>(v, value);}, data);
             }
@@ -275,17 +275,22 @@ namespace MathCore
                 accumulator += value;
             }
 
-            template<typename T> T Maximum(const CommonVector<T>* data)
+            template<typename T> T Maximum(const std::shared_ptr<CommonVector<T>>& data)
             {
                 return SingleReducer<T,T>(MaxValue<T>, data, data->fast_begin()->value());
             }
 
-            template<typename T> T Minimum(const CommonVector<T>* data)
+			template<typename T, typename R> void Maximal(R& result, const T& value)
+			{
+				result = std::max(result, (R)value);
+			}
+
+            template<typename T> T Minimum(const std::shared_ptr<CommonVector<T>>& data)
             {
                 return SingleReducer<T,T>(MinValue<T>, data, data->fast_begin()->value());
             }   
 
-            template<typename T> T ValuesSumm(const CommonVector<T>* data)
+            template<typename T> T ValuesSumm(const std::shared_ptr<CommonVector<T>>& data)
             {
                 return SingleReducer<T,T>(SumValue<T>, data);
             }

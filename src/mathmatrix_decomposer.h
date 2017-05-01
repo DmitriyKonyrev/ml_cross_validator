@@ -1,8 +1,8 @@
 #ifndef MATHMATRIXDECOMPOSER_H
 #define MATHMATRIXDECOMPOSER_H
 
-#include "mathvector.h"
-#include "mathvector_norm.h"
+#include "math_vector.h"
+#include "math_vector_norm.h"
 
 #include "mathmatrix.h"
 
@@ -57,8 +57,6 @@ namespace MathCore
 
 							for (size_t index_2 = 0; index_2 < cols; index_2++)
 							{
-								T regular = q[index_2].getElement(index_2) + pow(10.0, -6);
-								q[index_2].insert(regular, index_2);
 								T r_value_ = euclidean(q[index_2]);
 								r[index_2].insert(r_value_, index_2);
 								q[index_2] /= r[index_2].getElement(index_2);

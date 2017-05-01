@@ -29,6 +29,7 @@
 #include "logistic_regression.h"
 #endif
 
+#include "math_vector.h"
 #include "math_vector_norm.h"
 
 using namespace MachineLearning;
@@ -89,12 +90,12 @@ MathVector<float>& LogisticRegression::weightsInit(size_t size)
 
 	for (size_t index = 0; index < size; index++)
 	{
-		this->weights.push_back(distribution(gen));
+		weights.push_back(distribution(gen));
 	}
 
 	this->threshold = distribution(gen);
 
-	this->weights.setValues(weights);
+	this->weights = MathVector<float>(weights);
 
 	return this->weights;
 }
@@ -106,9 +107,9 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 
 	size_t length = learnSet.size();
 
-	size_t features_count = learnSet.at(0).getFeatures().getSize();
+	size_t features_count = learnSet.at(0).getFeatures().get_dimension();
 
-	this->weights.setValues(features_count, 0);
+	this->weights = MathVector<float>(features_count, 0);
 
 	this->threshold = 0;
 
@@ -158,7 +159,14 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 
 		iterations++;
 		if (iterations % length == 0)
-			std::cout << "iterations: " << iterations << std::endl;
+		{
+			std::cout << "iterations  : " << iterations <<  std::endl
+			  << "\tq_assessment_diff : " << abs(q_assessment - q_assessment_last) << std::endl
+			  << "\tweight_difference : " << weight_difference << std::endl
+              << "\tmodel complexity  : " << this->weights.getSizeOfNotNullElements() << std::endl
+			  << "\ttreshold          : " << threshold << std::endl;
+
+		}
         if (iterations % part == 0)
             learning_curve.push_back(std::make_pair(_scalar, _real_value));
 	}
@@ -180,7 +188,7 @@ void LogisticRegression::weightsJog()
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	size_t size = this->weights.getSize();
+	size_t size = this->weights.get_dimension();
 
 	std::uniform_real_distribution<float> distribution(-1, 1);
 

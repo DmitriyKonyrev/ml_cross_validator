@@ -63,8 +63,8 @@ void SimpleFischerLDA::learn(std::vector<Instance>& learnSet, std::vector<std::p
     std::cout << "inverse covariation" << std::endl;
     _covariation_inverse = !_covariation_inverse;
 
-	MathMatrix<float> sampleMeans_positive(0, _sample_means[0].getSize());
-	MathMatrix<float> sampleMeans_negative(0, _sample_means[1].getSize());
+	MathMatrix<float> sampleMeans_positive(0, _sample_means[0].get_dimension());
+	MathMatrix<float> sampleMeans_negative(0, _sample_means[1].get_dimension());
 
 	sampleMeans_positive.push_back(_sample_means[0]);
 	sampleMeans_negative.push_back(_sample_means[1]);
@@ -135,7 +135,7 @@ MathMatrix<float>& SimpleFischerLDA::sampleMeans(std::vector<MathVector<float>>&
 	sampleMeans.push_back(_sample_means_negative);
     HolderVectorNorm<float> euclidean;
 	//this->fine = std::make_pair(instances_negative, instances_positive);
-    this->fine = std::make_pair(euclidean.calc(_sample_means_positive) * instances_negative, euclidean.calc(_sample_means_negative) * instances_positive);
+    this->fine = std::make_pair(euclidean(_sample_means_positive) * instances_negative, euclidean(_sample_means_negative) * instances_positive);
 
 
 	MathMatrix<float>* _values = new MathMatrix<float>(sampleMeans);
@@ -145,13 +145,12 @@ MathMatrix<float>& SimpleFischerLDA::sampleMeans(std::vector<MathVector<float>>&
 
 void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float>& learnY, MathMatrix<float>& _sampleMeans, MathMatrix<float>& _covariations)
 {
-	_covariations = MathMatrix<float>(learnSet.cols_size(), learnSet.cols_size(), 0);
+	std::vector<std::vector<float>>_covariations_values(learnSet.cols_size(), std::vector<float>(learnSet.cols_size(), 0.0));
     size_t part = pow(10, 5);
     size_t total_count = 0;
     float regularizeValue = std::pow(10, -5);
     float normalizing = (learnSet.rows_size() - 2);
-    float magic = pow(10.0, -8.0);
-#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t index = 0; index < learnSet.rows_size(); index++)
 	{
 		MathVector<float> difference;
@@ -165,22 +164,20 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
 			difference = learnSet[index] - _sampleMeans[1];
 		}
 
-		MathVector<float>::fast_iterator outIt = difference.fast_begin();
-
-		for (; outIt != difference.fast_end(); ++outIt)
+		#pragma omp parallel for
+		for (size_t out_index = 0; out_index < difference.get_dimension(); ++out_index)
 		{
-			MathVector<float>::fast_iterator innerIt = outIt;
-
-			for (; innerIt != difference.fast_end(); ++innerIt)
+			const float out_value = difference.getElement(out_index);
+			#pragma omp parallel for private(out_value)
+			for (size_t inner_index = 0; inner_index < difference.get_dimension(); ++inner_index)
 			{
-				float value_1 = (_covariations.at(outIt->first, innerIt->first) + outIt->second * innerIt->second) / normalizing + ((outIt == innerIt) ? regularizeValue : 0.0);
-				float value_2 = (_covariations.at(innerIt->first, outIt->first) + outIt->second * innerIt->second) / normalizing;
-				#pragma omp atomic
-				_covariations.insert_element(value_1, outIt->first, innerIt->first);
-                if (outIt != innerIt)
+				const float value = (difference.getElement(inner_index) * out_value) / normalizing;
+				#pragma omp atomic 
+				_covariations_values[out_index][inner_index] += value;
+				if (out_index != inner_index)
 				{
-                    #pragma omp atomic
-                    _covariations.insert_element(value_2, innerIt->first, outIt->first);
+					#pragma omp atomic
+					_covariations_values[inner_index][out_index] += value;
 				}
 			}
 		}
@@ -191,6 +188,14 @@ void SimpleFischerLDA::covariation(MathMatrix<float>& learnSet, MathVector<float
         if (total_count % part == 0)
             std::cout << "processed objects: " << total_count << std::endl;
 	}
+
+	#pragma omp parallel for
+	for (size_t index = 0; index < learnSet.cols_size(); ++index)
+	{
+		_covariations_values[index][index] += regularizeValue;
+	}
+
+	_covariations = MathMatrix<float>(_covariations_values);
 
 	return;
 }

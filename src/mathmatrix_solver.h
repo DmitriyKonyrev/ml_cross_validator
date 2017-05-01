@@ -68,7 +68,7 @@ namespace MathCore
 
 							MathVector<T> solve(const MathMatrix<T>& matrix, const MathVector<T>& vector)
 							{
-								MathCore<T> result(vector);
+								MathVector<T> result(vector);
 
 								size_t row_size = matrix.rows_size();
                                 #pragma omp parallel for
@@ -77,7 +77,7 @@ namespace MathCore
                                     T value = result.getElement(index1) / matrix.at(index1, index1);
 
                                     #pragma omp atomic
-									result.insrt(value, index1);
+									result.insert(value, index1);
 
                                     #pragma omp parallel for
 									for (int index2 = index1 - 1; index2 >= 0; index2--)
@@ -85,7 +85,7 @@ namespace MathCore
 
 										T coefficient = result.getElement(index2) - matrix.at(index2, index1) * value;
                                         #pragma omp atomic
-										result.at(index2) = coefficient;
+										result.insert(coefficient, index2);
 									}
 								}
 

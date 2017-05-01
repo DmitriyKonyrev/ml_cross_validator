@@ -79,7 +79,7 @@ namespace MathCore
 
 				void insert_element(T elemenet, size_t rowIndex, size_t colIndex);
                 MathVector<T> row(size_t rowIndex);
-				T at(size_t rowIndex, size_t colIndex);
+				T at(size_t rowIndex, size_t colIndex) const;
 				//---------------------------------------------------------------------
 
 				//-------------------------operators------------------------------------
@@ -249,7 +249,7 @@ namespace MathCore
 
 			template<typename T>  void MathMatrix<T>::push_back(MathVector<T> row)
 			{
-				if (row.getSize() != col_size)
+				if (row.get_dimension() != col_size)
 				{
 					throw std::out_of_range("");
 				}
@@ -308,7 +308,7 @@ namespace MathCore
             }
 
 
-			template<typename T> T MathMatrix<T>::at(size_t rowIndex, size_t colIndex)
+			template<typename T> T MathMatrix<T>::at(size_t rowIndex, size_t colIndex) const
 			{
 				return this->values.at(rowIndex).getElement(colIndex);
 			}

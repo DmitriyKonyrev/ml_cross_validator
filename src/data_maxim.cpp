@@ -66,7 +66,7 @@ void DataMaxim::parseFrom(std::string _data, int feature_count)
 		featuresValue[position] = atof(feature_values.back().c_str());
 	}
 
-	(this->features) = *(new MathVector<float>(featuresValue, feature_count));
+	this->features = MathVector<float>(featuresValue, feature_count);
 
 	return;
 }

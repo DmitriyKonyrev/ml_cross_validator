@@ -44,13 +44,13 @@ namespace MathCore
                 : public iterator
             {
             public:
-                typedef full_iterator self_type;
-                typedef full_iterator* self_pointer;
-                typedef T value_type;
-                typedef T& reference;
-                typedef T* pointer;
+                typedef full_iterator             self_type;
+                typedef full_iterator*            self_pointer;
+                typedef T                         value_type;
+                typedef T&                        reference;
+                typedef T*                        pointer;
                 typedef std::forward_iterator_tag iterator_category;
-                typedef int difference_type;
+                typedef int                       difference_type;
 
             protected:
                 full_iterator(const CommonVector *parent, size_t index=0) 
@@ -79,6 +79,46 @@ namespace MathCore
                 const CommonVector* m_parent;
             };
 
+            class const_full_iterator
+                : public iterator
+            {
+            public:
+                typedef const full_iterator        self_type;
+                typedef full_iterator*             self_pointer;
+                typedef T                          value_type;
+                typedef const T &                  reference;
+                typedef const T *                  pointer;
+                typedef std::forward_iterator_tag  iterator_category;
+                typedef int                        difference_type;
+
+            protected:
+                const_full_iterator(const CommonVector * const parent, size_t index=0) 
+                    : iterator(index),
+                      m_parent(parent)
+                { }
+
+            public:
+                self_pointer operator++() 
+                { 
+                    this->m_index++;        
+                    return this;
+                }
+
+                value_type operator*() const
+                {
+                    return m_parent->get_value(this->m_index);
+                }
+
+                value_type value() const
+                {
+                    return m_parent->get_value(this->m_index);
+                }
+
+            private:
+                const CommonVector * const m_parent;
+            };
+
+
             class fast_iterator
                 : public iterator
             {
@@ -96,8 +136,42 @@ namespace MathCore
 
             public:
                 virtual self_pointer operator++() { return this; }
-                virtual value_type value() { return (T)0; };
-                virtual size_t index() { return this->m_index; }
+				virtual void increment() = 0;
+                virtual reference value() = 0;
+                size_t index() const { return this->m_index; }
+                bool operator==(const self_type& rhs) const { return this->m_index == rhs.m_index; }
+                bool operator!=(const self_type& rhs) const { return this->m_index != rhs.m_index; }
+                bool operator<(const self_type& rhs) const { return this->m_index < rhs.m_index; }
+                bool operator>(const self_type& rhs) const { return this->m_index > rhs.m_index; }
+                bool operator<=(const self_type& rhs) const { return this->m_index <= rhs.m_index; }
+                bool operator>=(const self_type& rhs) const { return this->m_index >= rhs.m_index; }
+            };
+
+            class const_fast_iterator
+                : public iterator
+            {
+            public:
+                typedef const_fast_iterator             self_type;
+                typedef const_fast_iterator*            self_pointer;
+                typedef T                         value_type;
+                typedef const T&                  reference;
+                typedef const T*                  pointer;
+                typedef std::forward_iterator_tag iterator_category;
+                typedef int difference_type;
+
+            protected:
+                const_fast_iterator(size_t index=0) : iterator(index) { }
+
+            public:
+				virtual void increment() = 0;
+                virtual value_type value() const { return (T)0; };
+                size_t index() const { return this->m_index; }
+                bool operator==(const self_type& rhs) const { return this->m_index == rhs.m_index; }
+                bool operator!=(const self_type& rhs) const { return this->m_index != rhs.m_index; }
+                bool operator<(const self_type& rhs) const { return this->m_index < rhs.m_index; }
+                bool operator>(const self_type& rhs) const { return this->m_index > rhs.m_index; }
+                bool operator<=(const self_type& rhs) const { return this->m_index <= rhs.m_index; }
+                bool operator>=(const self_type& rhs) const { return this->m_index >= rhs.m_index; }
             };
 
         public:
@@ -115,7 +189,8 @@ namespace MathCore
             { }
 
             //------------usual-operators-----------
-            size_t get_size() { return m_size; };
+            size_t get_size() const { return m_size; };
+			virtual size_t get_not_nulls_count() = 0;
 			virtual void update(const T& value, size_t index) = 0;
             virtual bool is_null() = 0;
 			virtual void clear()
@@ -134,10 +209,16 @@ namespace MathCore
             virtual T operator[](size_t index) = 0;
 
             virtual fast_iterator* fast_begin() = 0;
-            virtual fast_iterator* fast_end() = 0;
+            virtual fast_iterator* fast_end()   = 0;
+
+            virtual const_fast_iterator* const_fast_begin() const = 0;
+            virtual const_fast_iterator* const_fast_end() const = 0;
 
             full_iterator* begin() { return new full_iterator(this, 0); }
-            full_iterator* end() { return new full_iterator(this, m_size); }
+            full_iterator* end()   { return new full_iterator(this, m_size); }
+
+            const_full_iterator* const_begin() const { return new const_full_iterator(this, 0); }
+            const_full_iterator* const_end() const { return new const_full_iterator(this, m_size); }
 
         protected:
             size_t m_size;

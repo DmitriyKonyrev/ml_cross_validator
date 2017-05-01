@@ -6,6 +6,7 @@
 
 #include "instance.h"
 #include "math_vector.h"
+#include "math_vector_norm.h"
 
 #include "data.h"
 
@@ -31,12 +32,13 @@ Data::Data(std::string _data)
 
 float Data::maximum()
 {
-	return this->features.getMaximalElement();
+	MVectorNorm<float> m_norm;
+	return m_norm(this->features);
 }
 
 size_t Data::featuresSize()
 {
-	return this->features.getSize();
+	return this->features.get_dimension();
 }
 
 void Data::completeFeatures(size_t counts)

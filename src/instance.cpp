@@ -47,7 +47,7 @@ namespace MachineLearning
 
 	size_t Instance::getFeaturesSize()
 	{
-		return this->features.getSize();
+		return this->features.get_dimension();
 	}
 
 	size_t Instance::getNotNullFeaturesSize()

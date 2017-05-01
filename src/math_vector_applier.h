@@ -14,7 +14,7 @@ namespace MathCore
     {
         template<typename T, typename R> class MathVectorOperatorApplier
         {
-        protected:
+        public:
             std::vector<R> applySingleMapOperator(std::function<R (const T&)> map_operator, const MathVector<T>& vector)
             {
                 return SingleMapper<T,R>(map_operator, vector.m_vectorData);
@@ -56,7 +56,7 @@ namespace MathCore
             }
 
         public:
-            MapOperatorApplier() {};
+            MathVectorOperatorApplier() {};
         };
     }
 }

@@ -16,7 +16,10 @@ namespace MathCore
         {
         public:
             typedef typename CommonVector<T>::fast_iterator base_fast_iterator;
-            typedef typename std::map<size_t, T>::const_iterator mapped_iterator;
+            typedef typename CommonVector<T>::const_fast_iterator base_const_fast_iterator;
+
+            typedef typename std::map<size_t, T>::iterator mapped_iterator;
+			typedef typename std::map<size_t, T>::const_iterator const_mapped_iterator;
 
             //--------iterators---------------
             class fast_iterator
@@ -28,9 +31,10 @@ namespace MathCore
                 typedef fast_iterator self_type;
                 typedef typename CommonVector<T>::fast_iterator* self_pointer;
                 typedef T value_type;
+				typedef T& reference_type;
 
             protected:
-                fast_iterator(const SparseVector& parent, size_t index=0)
+                fast_iterator(SparseVector& parent, size_t index=0)
                     : m_parent(parent)
                 {
                     if (index == 0)
@@ -69,6 +73,88 @@ namespace MathCore
             public:
                 self_pointer operator++()
                 {
+					increment();
+                    return this;
+                }
+
+                void increment()
+                {
+                    this->m_valueIterator++;
+                    if (this->m_valueIterator != this->m_parent.m_notNullValues.end())
+                    {
+                        this->m_index = this->m_valueIterator->first;
+                    }
+                    else
+                    {
+                        this->m_index = this->m_parent.m_size;
+					}
+                }
+
+                reference_type operator*()
+				{
+                    return this->m_valueIterator->second;
+                }
+
+                reference_type value()
+                {
+                    return this->m_valueIterator->second;
+                }
+
+            private:
+                SparseVector& m_parent;
+                mapped_iterator m_valueIterator;
+            };
+
+            class const_fast_iterator
+                : public CommonVector<T>::const_fast_iterator
+            {
+            public:
+                friend SparseVector<T>;
+
+                typedef const_fast_iterator self_type;
+                typedef const typename CommonVector<T>::const_fast_iterator* self_pointer;
+                typedef T value_type;
+
+            protected:
+                const_fast_iterator(const SparseVector& parent, size_t index=0)
+                    : m_parent(parent)
+                {
+                    if (index == 0)
+                    {
+                        this->m_valueIterator = this->m_parent.m_notNullValues.begin();
+                        this->m_index = this->m_valueIterator->first;
+                    }
+                    else if (index == this->m_parent.m_size)
+                    {
+                        this->m_valueIterator = this->m_parent.m_notNullValues.end();
+                        this->m_index = this->m_parent.m_size;
+
+                    }
+                    else
+                    {
+                        const_mapped_iterator  value_it = this->m_parent.m_notNullValues.find(index);
+                        if (value_it != this->m_parent.m_notNullValues.end())
+                        {
+                            this->m_valueIterator = value_it;
+                        }
+                        else
+                        {
+                            const_mapped_iterator nearestNotNull;
+                            for (nearestNotNull = this->m_parent.m_notNullValues.begin();
+                                 nearestNotNull != this->m_parent.m_notNullValues.end();
+                                 nearestNotNull++)
+                            {
+                                if (index >= nearestNotNull->first)
+                                    break;
+                            }
+                        }
+                        this->m_index = this->m_valueIterator->first;
+                    }
+                }
+
+            public:
+                void increment()
+                {
                     this->m_valueIterator++;
                     if (this->m_valueIterator != this->m_parent.m_notNullValues.end())
                     {
@@ -78,23 +164,21 @@ namespace MathCore
                     {
                         this->m_index = this->m_parent.m_size;
                     }
-
-                    return this;
                 }
 
-                value_type operator*()
+                value_type operator*() const
                 {
                     return this->m_valueIterator->second;
                 }
 
-                value_type value()
+                value_type value() const
                 {
                     return this->m_valueIterator->second;
                 }
 
             private:
                 const SparseVector& m_parent;
-                const mapped_iterator m_valueIterator;
+                const_mapped_iterator m_valueIterator;
             };
 
         public:
@@ -128,11 +212,11 @@ namespace MathCore
                 : CommonVector<T>(mapped_values, full_size),
                   m_notNullValues(mapped_values)
             {
-                std::transform(
-                    this->m_notNullValues.begin(),
-                    this->m_notNullValues.end(),
-                    std::back_inserter(this->m_notNullIndexes),
-                    [](const std::map<int,int>::value_type &pair){return pair.first;});
+				const_mapped_iterator it   = mapped_values.begin();
+				const_mapped_iterator end  = mapped_values.end();
+
+				for (; it != end; ++it)
+					this->m_notNullIndexes.insert(it->first);
             };
 
 			void update(const T& value, size_t index)
@@ -143,7 +227,7 @@ namespace MathCore
 				else
 				{
 					m_notNullValues.insert(std::make_pair(index, value));
-					m_notNullIndexes,insert(index);
+					m_notNullIndexes.insert(index);
 				}
 			}
 
@@ -160,6 +244,11 @@ namespace MathCore
                     return (T)0;
                 }
             }
+
+			size_t get_not_nulls_count()
+			{
+				return m_notNullIndexes.size();
+			}
 
             bool is_null()
             {
@@ -192,6 +281,16 @@ namespace MathCore
             base_fast_iterator* fast_end()
             {
                 return new fast_iterator(*this, this->m_size);
+            }
+
+            base_const_fast_iterator* const_fast_begin() const
+            {
+                return new const_fast_iterator(*this, 0);
+            }
+
+            base_const_fast_iterator* const_fast_end() const
+            {
+                return new const_fast_iterator(*this, this->m_size);
             }
 
         private:
