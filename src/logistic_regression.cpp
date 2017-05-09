@@ -47,14 +47,15 @@ float LogisticRegression::scalarProduct(MathVector<float>& features)
 
 float LogisticRegression::predictRaw(float _scalar)
 {
-	return this->activate->calc(_scalar);
+	//return this->activate->calc(_scalar);
+	return this->learningActivate->calc(_scalar) * 2. - 1.;
 }
 
 float LogisticRegression::predict(MathVector<float>& features)
 {
 	float _product = this->scalarProduct(features);
 
-	return this->activate->calc(_product);
+	return this->activate->calc(_product); 
 }
 
 void LogisticRegression::setIterationInterval(size_t _minimalIterations, size_t _maximalIterations)
@@ -121,14 +122,14 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 	std::uniform_int_distribution<size_t> distribution(0, learnSet.size() - 1);
 
 	float q_assessment = this->quality(learnSet);
-
 	float q_assessment_last = q_assessment;
-
 	float weight_difference = 0;
-
 	size_t iterations = 0;
-
     size_t part = pow(10, 3);
+	size_t window = pow(10, 2);
+
+	float accumulated_logloss = 0.0;
+	float accumulated_rmse    = 0.0;
 
 	EuclideanNorm<float> euclidean;
 	do
@@ -137,6 +138,9 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 		float _scalar = this->scalarProduct(learnSet.at(instance_index).getFeatures());
 		float _prediction = this->predictRaw(_scalar);
 		float _real_value = learnSet.at(instance_index).getGoal();
+		accumulated_logloss += Metrics::Logloss(_real_value, _prediction);
+		accumulated_rmse    += Metrics::RMSE(_real_value, _prediction);
+
 		float _margin = _scalar * _real_value;
 		float _error = this->approximation->calc(_margin);
 
@@ -160,8 +164,10 @@ void LogisticRegression::learn(std::vector<Instance>& learnSet, std::vector<std:
 		iterations++;
 		if (iterations % length == 0)
 			std::cout << "iterations: " << iterations << std::endl;
-        if (iterations % part == 0)
-            learning_curve.push_back(std::make_pair(_scalar, _real_value));
+        if (iterations % window == 0)
+		{
+            learning_curve.push_back(std::make_pair(accumulated_logloss / iterations, accumulated_rmse / iterations));
+		}
 	}
    	while ((abs(q_assessment - q_assessment_last) >= pow(10,   -5) ||
 			weight_difference >= pow(10, -5) ||
@@ -193,4 +199,9 @@ void LogisticRegression::weightsJog()
 	this->threshold += distribution(gen);
 
 	return;
+}
+
+size_t LogisticRegression::get_model_complexity()
+{
+	return this->weights.getSizeOfNotNullElements();
 }

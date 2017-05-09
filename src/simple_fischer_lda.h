@@ -50,7 +50,7 @@ namespace MachineLearning
 
 			void covariation(MathMatrix<float>& learnSet, MathVector<float>& learnY, MathMatrix<float>& _sampleMeans, MathMatrix<float>& transpose_cov);
 
-
+			size_t get_model_complexity();
 	};
 }
 #endif

@@ -33,6 +33,7 @@ namespace MachineLearning
 			virtual std::vector<float> test(std::vector<Instance>& testSet, std::vector<Metrics::Metric>& metrics);
 
 			size_t getFeaturesCount();
+			virtual size_t get_model_complexity() = 0;
 		protected:
 
 			std::vector<float> rmse(std::vector<Instance>& instances);

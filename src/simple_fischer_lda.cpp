@@ -37,6 +37,11 @@ float SimpleFischerLDA::predict(MathVector<float>& features)
 	return ((_prediction_positive - _prediction_negative ) > threshold) ? 1. : -1.;
 }
 
+size_t SimpleFischerLDA::get_model_complexity()
+{
+	return 7 + alpha_positive.getSize() + alpha_negative.getSize();
+}
+
 void SimpleFischerLDA::learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve)
 {
 	std::vector<MathVector<float>> *_features = new std::vector<MathVector<float>>();

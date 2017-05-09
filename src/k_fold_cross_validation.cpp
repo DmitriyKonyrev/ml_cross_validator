@@ -67,47 +67,69 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
     boost::filesystem::create_directory(result_dir.string());
 
     boost::filesystem::path learn_precision_path("learn_precision_path");
-    learn_precision_path = testing_category_name / learn_precision_path;
-    std::ofstream learn_precision_path_file(learn_precision_path.string());
+    learn_precision_path = result_dir / learn_precision_path;
+    std::ofstream learn_precision_path_file;
+	learn_precision_path_file.open(learn_precision_path.string());
     boost::filesystem::path test_precision_path("test_precision_path");
-    test_precision_path = testing_category_name / test_precision_path;
-    std::ofstream test_precision_path_file(test_precision_path.string());
+    test_precision_path = result_dir / test_precision_path;
+    std::ofstream test_precision_path_file;
+	test_precision_path_file.open(test_precision_path.string());
 
     boost::filesystem::path learn_complete_path("learn_complete_path");
-    learn_complete_path = testing_category_name / learn_complete_path;
-    std::ofstream learn_complete_path_file(learn_complete_path.string());
+    learn_complete_path = result_dir / learn_complete_path;
+    std::ofstream learn_complete_path_file;
+	learn_complete_path_file.open(learn_complete_path.string());
     boost::filesystem::path test_complete_path("test_complete_path");
-    test_complete_path = testing_category_name / test_complete_path;
-    std::ofstream test_complete_path_file(test_complete_path.string());
+    test_complete_path = result_dir / test_complete_path;
+    std::ofstream test_complete_path_file;
+	test_complete_path_file.open(test_complete_path.string());
 
     boost::filesystem::path learn_f1_path("learn_f1_path");
-    learn_f1_path = testing_category_name / learn_f1_path;
-    std::ofstream learn_f1_path_file(learn_f1_path.string());
+    learn_f1_path = result_dir / learn_f1_path;
+    std::ofstream learn_f1_path_file;
+	learn_f1_path_file.open(learn_f1_path.string());
     boost::filesystem::path test_f1_path("test_f1_path");
-    test_f1_path = testing_category_name / test_f1_path;
-    std::ofstream test_f1_path_file(test_f1_path.string());
+    test_f1_path = result_dir / test_f1_path;
+    std::ofstream test_f1_path_file;
+	test_f1_path_file.open(test_f1_path.string());
 
     boost::filesystem::path learn_accuracy_path("learn_accuracy_path");
-    learn_accuracy_path = testing_category_name / learn_accuracy_path;
-    std::ofstream learn_accuracy_path_file(learn_accuracy_path.string());
+    learn_accuracy_path = result_dir / learn_accuracy_path;
+    std::ofstream learn_accuracy_path_file;
+	learn_accuracy_path_file.open(learn_accuracy_path.string());
     boost::filesystem::path test_accuracy_path("test_accuracy_path");
-    test_accuracy_path = testing_category_name / test_accuracy_path;
-    std::ofstream test_accuracy_path_file(test_accuracy_path.string());
+    test_accuracy_path = result_dir / test_accuracy_path;
+    std::ofstream test_accuracy_path_file;
+	test_accuracy_path_file.open(test_accuracy_path.string());
 
     boost::filesystem::path learn_rmse_path("learn_rmse_path");
-    learn_rmse_path = testing_category_name / learn_rmse_path;
-    std::ofstream learn_rmse_path_file(learn_rmse_path.string());
+    learn_rmse_path = result_dir / learn_rmse_path;
+    std::ofstream learn_rmse_path_file;
+	learn_rmse_path_file.open(learn_rmse_path.string());
     boost::filesystem::path test_rmse_path("test_rmse_path");
-    test_rmse_path = testing_category_name / test_rmse_path;
-    std::ofstream test_rmse_path_file(test_rmse_path.string());
+    test_rmse_path = result_dir / test_rmse_path;
+    std::ofstream test_rmse_path_file;
+	test_rmse_path_file.open(test_rmse_path.string());
 
-    boost::filesystem::path learn_learning_path("learning");
-    learn_learning_path = testing_category_name / learn_learning_path;
-    std::ofstream learn_learning_path_file(learn_learning_path.string());
+    boost::filesystem::path learning_logloss_path("learning_logloss");
+    learning_logloss_path = result_dir / learning_logloss_path;
+    std::ofstream learning_logloss_path_file;
+	learning_logloss_path_file.open(learning_logloss_path.string());
+
+    boost::filesystem::path learning_rmse_path("learning_rmse");
+    learning_rmse_path = result_dir / learning_rmse_path;
+    std::ofstream learning_rmse_path_file;
+	learning_rmse_path_file.open(learning_rmse_path.string());
 
     boost::filesystem::path time_path("time_path");
-    time_path = testing_category_name / time_path;
-    std::ofstream time_path_file(time_path.string());
+    time_path = result_dir / time_path;
+    std::ofstream time_path_file;
+	time_path_file.open(time_path.string());
+
+    boost::filesystem::path model_complexity_path("model_complexity_path");
+    model_complexity_path = result_dir / model_complexity_path;
+    std::ofstream model_complexity_path_file;
+	model_complexity_path_file.open(model_complexity_path.string());
 
 	std::vector<std::vector<Instance>> learnSet;
 	std::vector<std::vector<Instance>> testSet;
@@ -154,6 +176,7 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
     float average_test_rmse      = 0.0;
 
     float averageDuration = 0.;
+	float averageComplexity = 0.;
 
 	std::vector<Metrics::Metric> metrics_vector;
 	metrics_vector.push_back(Metrics::PrecisionMetric);
@@ -184,6 +207,7 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
 		duration = (float)(finish - start);
 
 		averageDuration += duration;
+		averageComplexity += _predictor->get_model_complexity();
         std::cout << "Check learn set" << std::endl;
 		std::vector<float> learnCharacteristics = _predictor->test(learnSet.at(foldNumber), metrics_vector);
         float learn_precision = learnCharacteristics.at(0);
@@ -225,8 +249,10 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
         test_rmse_path_file      << test_rmse      << std::endl;
 
         time_path_file << duration << std::endl;
+		model_complexity_path_file << _predictor->get_model_complexity() << std::endl;
 
-        std::cout << "learning time: " << duration << std::endl;
+        std::cout << "learning time   : " << duration << std::endl;
+		std::cout << "model complexity: " << _predictor->get_model_complexity() << std::endl;
 
         std::cout << "precision  : learn - " << learn_precision << " test - " << test_precision << std::endl;
         std::cout << "completness: learn - " << learn_complete  << " test - " << test_complete << std::endl;
@@ -235,9 +261,10 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
         std::cout << "rmse       : learn - " << learn_rmse      << " test - " << test_rmse     << std::endl;
 
         std::for_each(learning_curve.begin(), learning_curve.end(),
-        [&learn_learning_path_file](std::pair<float, float> values)
+        [&learning_logloss_path_file, &learning_rmse_path_file](std::pair<float, float>& values)
         {
-            learn_learning_path_file << values.first << "\t" << values.second << std::endl;
+            learning_logloss_path_file  << values.first << std::endl;
+			learning_rmse_path_file << values.second << std::endl;
         });
 
 		std::srand(unsigned(std::time(NULL)));
@@ -268,11 +295,13 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
     test_accuracy_path_file  << average_test_accuracy  << std::endl;
     test_rmse_path_file      << average_test_rmse      << std::endl;
 
-    averageDuration /= foldsCount;
+    averageDuration   /= foldsCount;
+	averageComplexity /= foldsCount;
 
     time_path_file << averageDuration << std::endl;
     std::cout << "K Fold CV Total:" << std::endl;
-    std::cout << "\taverage learning time: " << averageDuration << std::endl;
+    std::cout << "\taverage learning time   : " << averageDuration   << std::endl;
+	std::cout << "\taverage model complexity: " << averageComplexity << std::endl;
 
     std::cout << "\taverage precision  : learn - " << average_learn_precision << " test - " << average_test_precision << std::endl;
     std::cout << "\taverage completness: learn - " << average_learn_complete  << " test - " << average_test_complete << std::endl;

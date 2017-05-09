@@ -48,6 +48,8 @@ namespace MachineLearning
 			float quality(std::vector<Instance>& testSet);
 			void setIterationInterval(size_t _minimalIterations, size_t _maximalIterations);
 
+			size_t get_model_complexity();
+
 		private:
 			float scalarProduct(MathVector<float>& features);
 			float predictRaw(float _scalar);

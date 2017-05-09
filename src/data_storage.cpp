@@ -99,15 +99,19 @@ void DataStorage::parseFromFile(std::string fileName)
 	return;
 }
 
-Pool& DataStorage::toPool(std::string category)
+Pool& DataStorage::toPool(std::string category, size_t& positive_count, float& blur_factor)
 {
 	std::vector<Instance>* instances = new std::vector<Instance>();
 
+	positive_count = 0;
+	blur_factor = 0.0;
+
 	for (int index = 0; index < this->datas.size(); index++)
 	{
-	  instances->push_back(this->datas.at(index).toInstance(category));
+	  instances->push_back(this->datas.at(index).toInstance(category, positive_count, blur_factor));
 	}
 
+	blur_factor /= positive_count;
 	Pool* pool = new Pool(*instances);
 
 	delete instances;
@@ -115,15 +119,18 @@ Pool& DataStorage::toPool(std::string category)
 	return *pool;
 }
 
-Pool& DataStorage::toLinearPool(std::string category)
+Pool& DataStorage::toLinearPool(std::string category, size_t& positive_count, float& blur_factor)
 {
 	std::vector<Instance>* instances = new std::vector<Instance>();
+	positive_count = 0;
+	blur_factor = 0.0;
 
 	for (int index = 0; index < this->datas.size(); index++)
 	{
-		instances->push_back(this->datas.at(index).toLinearInstance(category));
+		instances->push_back(this->datas.at(index).toLinearInstance(category, positive_count, blur_factor));
 	}
 
+	blur_factor /= positive_count;
 	Pool* pool = new Pool(*instances);
 
 	delete instances;

@@ -52,13 +52,15 @@ float Data::at(size_t index)
 	return this->features.getElement(index);
 }
 
-Instance& Data::toInstance(std::string category)
+Instance& Data::toInstance(std::string category, size_t& positive_count, float& blur_factor)
 {
 	float goal = -1;
 
 	if (std::find(this->categories.begin(), this->categories.end(), category) != this->categories.end())
 	{
 		goal = 1;
+		positive_count++;
+		blur_factor += 1. / this->categories.size();
 	}
 
 	Instance* instance = new Instance(this->features, goal);
@@ -66,13 +68,15 @@ Instance& Data::toInstance(std::string category)
 	return *instance;
 }
 
-Instance& Data::toLinearInstance(std::string category)
+Instance& Data::toLinearInstance(std::string category, size_t& positive_count, float& blur_factor)
 {
 	float goal = 0;
 
 	if (std::find(this->categories.begin(), this->categories.end(), category) != this->categories.end())
 	{
 		goal = 1;
+		positive_count++;
+		blur_factor += 1. / this->categories.size();
 	}
 
 	Instance* instance = new Instance(this->features, goal);
