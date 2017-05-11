@@ -299,6 +299,7 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
 	averageComplexity /= foldsCount;
 
     time_path_file << averageDuration << std::endl;
+	model_complexity_path_file << averageComplexity << std::endl;
     std::cout << "K Fold CV Total:" << std::endl;
     std::cout << "\taverage learning time   : " << averageDuration   << std::endl;
 	std::cout << "\taverage model complexity: " << averageComplexity << std::endl;

@@ -3,6 +3,7 @@
 
 #include "mathvector.h"
 
+#include <functional>
 #include <vector>
 #include <string.h>
 
@@ -15,7 +16,7 @@ namespace MachineLearning
 	{
 	private:
 
-		MathVector<float>& features;
+		std::reference_wrapper<MathVector<float>> features;
 		float goal;
 
 	public:
@@ -27,11 +28,9 @@ namespace MachineLearning
 
 		float& operator [](int index) const;
 
-		float getGoal();
+		float getGoal() const;
 
-		MathVector<float>& getFeatures();
-
-		Instance& operator = (Instance& instance);
+		MathVector<float>& getFeatures() const;
 
 		operator MathVector<float>&();
 

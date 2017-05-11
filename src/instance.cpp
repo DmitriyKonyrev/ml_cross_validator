@@ -11,23 +11,23 @@ namespace MachineLearning
 
 	float& Instance::operator [](int index) const
 	{
-		return *(new float(features.getElement((size_t)index)));
+		return *(new float(features.get().getElement((size_t)index)));
 	}
 
-	float Instance::getGoal()
+	float Instance::getGoal() const
 	{
 		return goal;
 	}
 
-	MathVector<float>& Instance::getFeatures()
+	MathVector<float>& Instance::getFeatures() const
 	{
-		return features;
+		return features.get();
 	}
 
 
 	Instance::operator MathVector<float>&()
 	{
-		return features;
+		return features.get();
 	}
 
 	Instance::operator float() const
@@ -35,23 +35,13 @@ namespace MachineLearning
 		return this->goal;
 	}
 
-
-	Instance& Instance::operator = (Instance& instance)
-	{
-		this->features = instance.getFeatures();
-
-		this->goal = instance.getGoal();
-
-		return *this;
-	}
-
 	size_t Instance::getFeaturesSize()
 	{
-		return this->features.getSize();
+		return this->features.get().getSize();
 	}
 
 	size_t Instance::getNotNullFeaturesSize()
 	{
-		return this->features.getSizeOfNotNullElements();
+		return this->features.get().getSizeOfNotNullElements();
 	}
 }

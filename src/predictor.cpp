@@ -19,7 +19,7 @@ std::vector<float> Predictor::rmse(std::vector<Instance>& instances)
 	float false_positive = 0.;
 	float true_negative = 0.;
 	float false_negative = 0.;
-
+	
 	for (size_t index = 0; index < instances.size(); index++)
 	{
 
@@ -30,22 +30,22 @@ std::vector<float> Predictor::rmse(std::vector<Instance>& instances)
 		{
 			if (prediction == 1)
 			{
-				true_positive++;
+				true_positive = true_positive + 1;
 			}
 			else
 			{
-				true_negative++;
+				true_negative = true_negative + 1;
 			}
 		}
 		else
 		{
 			if (prediction == 1)
 			{
-				false_positive++;
+				false_positive = false_positive + 1;
 			}
 			else
 			{
-				false_negative++;
+				false_negative = false_negative + 1;
 			}
 		}
 	}
@@ -81,35 +81,46 @@ std::vector<float> Predictor::test(std::vector<Instance>& learnSet, std::vector<
 	float false_positive = 0.;
 	float true_negative = 0.;
 	float false_negative = 0.;
+	
+	size_t total_count = 0;
+	size_t part = 1e2;
 
+#pragma omp parallel for reduction (+:true_positive,false_positive,true_negative,false_negative,sumSquaredError)
 	for (size_t index = 0; index < learnSet.size(); index++)
 	{
 
 		float prediction = this->predict(learnSet.at(index).getFeatures());
-		sumSquaredError += std::pow(prediction - learnSet.at(index).getGoal(), 2);
+		float sse = std::pow(prediction - learnSet.at(index).getGoal(), 2);
+		sumSquaredError = sumSquaredError + sse;
 
 		if (prediction == learnSet.at(index).getGoal())
 		{
 			if (prediction == 1)
 			{
-				true_positive++;
+				true_positive = true_positive + 1;
 			}
 			else
 			{
-				true_negative++;
+				true_negative = true_negative + 1;
 			}
 		}
 		else
 		{
 			if (prediction == 1)
 			{
-				false_positive++;
+				false_positive = false_positive + 1;
 			}
 			else
 			{
-				false_negative++;
+				false_negative = false_negative + 1;
 			}
 		}
+
+#pragma omp atomic
+		total_count++;
+#pragma omp atomic
+		if (total_count % part == 0)
+			std::cout << "processed " << total_count << " objects" << std::endl;
 	}
 
     sumSquaredError /= learnSet.size();

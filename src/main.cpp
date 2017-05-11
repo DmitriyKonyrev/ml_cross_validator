@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string.h>
 #include <iostream>
+#include <memory>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -13,6 +14,11 @@
 #include "predictor.h"
 #include "simple_fischer_lda.h"
 #include "logistic_regression.h"
+#include "k_nearest_neighbours.h"
+
+#include "mathvector_norm.h"
+
+using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
 
 #include "loss_function_approximation.h"
 #include "activation_function.h"
@@ -35,7 +41,7 @@ try
     ("output-path,o", boost::program_options::value<std::string>(&outdir), "directory with output files")
 	("suffix,s", boost::program_options::value<std::string>(&suffix), "suffix of the output directory")
     ("fold-count,k", boost::program_options::value<uint32_t>(&fold_count), "count of folds to validate")
-    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf)")
+    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn)")
     ;
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
@@ -86,7 +92,12 @@ try
         {
             predictor = new SimpleFischerLDA(pool.getInstanceCount());
         }
-        else
+        else if (predictor_type.compare("knn") == 0)
+		{
+			std::shared_ptr<MathVectorNorm<float>> distance(new EuclideanNorm<float>());
+			predictor = new KNearestNeighbours(pool.getInstanceCount(), distance);
+		}
+		else
         {
     	    predictor = new LogisticRegression(pool.getInstanceCount(), 3, 100);
         }

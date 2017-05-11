@@ -25,7 +25,7 @@ namespace MathCore
 						return 0;
 					}
 
-					virtual T calc(MathVector<T>& first, MathVector<T>& second)
+					virtual T calc(const MathVector<T>& first, const MathVector<T>& second)
 					{
 						return 0;
 					}
@@ -49,13 +49,13 @@ namespace MathCore
 						return sqrt(norm);
 					}
 
-					T calc(MathVector<T>& first, MathVector<T>& second)
+					T calc(const MathVector<T>& first, const MathVector<T>& second)
 					{
-						typename MathVector<T>::fast_iterator firstBegin = first.fast_begin();
-						typename MathVector<T>::fast_iterator firstEnd   = first.fast_end();
+						typename MathVector<T>::const_fast_iterator firstBegin = first.const_fast_begin();
+						typename MathVector<T>::const_fast_iterator firstEnd   = first.const_fast_end();
 
-						typename MathVector<T>::fast_iterator secondBegin = second.fast_begin();
-						typename MathVector<T>::fast_iterator secondEnd   = second.fast_end();
+						typename MathVector<T>::const_fast_iterator secondBegin = second.const_fast_begin();
+						typename MathVector<T>::const_fast_iterator secondEnd   = second.const_fast_end();
 
 						T value = 0.;
 
