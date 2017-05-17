@@ -44,6 +44,19 @@ try
     ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn)")
     ;
     boost::program_options::variables_map vm;
+	 boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+    boost::program_options::notify(vm);
+
+	//kNN options
+	std::string weight_scheme = "const";
+	bool do_selecting = false;
+	if (predictor_type.compare("knn") == 0)
+	{
+		desc.add_options()
+		("weight-scheme,w", boost::program_options::value<std::string>(&weight_scheme), "scheme of weighting neighbours (const, exp, sigm, hyper, log)")
+		("fris-stolp,f", boost::program_options::bool_switch(&do_selecting), "do FRiS-STOLP objects selecting");
+	}
+
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
     boost::program_options::notify(vm);
 
@@ -54,7 +67,15 @@ try
         return 0;
     }
 
-	classifier_name += predictor_type + suffix;
+	classifier_name += predictor_type;
+	if (predictor_type.compare("knn") == 0)
+	{
+		classifier_name += "_" + weight_scheme;
+		if (do_selecting)
+			classifier_name += "_fris";
+	}
+
+	classifier_name += suffix;
     boost::filesystem::path output_dir(outdir);
 	boost::filesystem::path classifier_dir(classifier_name);
 	output_dir = output_dir / classifier_dir;
@@ -94,8 +115,19 @@ try
         }
         else if (predictor_type.compare("knn") == 0)
 		{
+			neighbour_weight_t weight;
+			if (weight_scheme.compare("const") == 0)
+				weight = KNearestNeighbours::const_weight;
+			else if (weight_scheme.compare("exp") == 0)
+				weight = KNearestNeighbours::exp_weight;
+			else if (weight_scheme.compare("sigm") == 0)
+				weight = KNearestNeighbours::sigm_weight;
+			else if (weight_scheme.compare("hyper") == 0)
+				weight = KNearestNeighbours::hyper_weight;
+			else
+				weight = KNearestNeighbours::log_weight;
 			std::shared_ptr<MathVectorNorm<float>> distance(new EuclideanNorm<float>());
-			predictor = new KNearestNeighbours(pool.getInstanceCount(), distance);
+			predictor = new KNearestNeighbours(pool.getInstanceCount(), distance, weight, do_selecting);
 		}
 		else
         {
