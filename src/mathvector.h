@@ -79,7 +79,7 @@ namespace MathCore
 
 				void setValues(const vector<T>& other);
 				void setValues(size_t _size, T _default_value);
-                T update(T factor, const MathVector<T>& values);
+                T update(T values_factor, T factor, const MathVector<T>& values);
 				T getElement(size_t position) const;
 
 				void push_back(T element);
@@ -377,7 +377,7 @@ namespace MathCore
 			}
 
 
-            template<typename T> T MathVector<T>::update(T factor, const MathVector<T>& other)
+            template<typename T> T MathVector<T>::update(T values_factor, T factor, const MathVector<T>& other)
             {
                 T difference = 0.0;
 		        MathVector<T>::const_fast_iterator it = other.const_fast_begin();
@@ -386,7 +386,7 @@ namespace MathCore
 		        for (; it != end; ++it)
 		        {
                     T value = this->getElement(it.index());
-			        T new_value = value + factor * it.getElem();
+			        T new_value = values_factor * value + factor * it.getElem();
 			        difference += pow(abs(new_value - value), 2.);
 			        this->insert(new_value, it.index());
 		        }

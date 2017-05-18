@@ -83,7 +83,7 @@ std::vector<float> Predictor::test(std::vector<Instance>& learnSet, std::vector<
 	float false_negative = 0.;
 	
 	size_t total_count = 0;
-	size_t part = 1e2;
+	size_t part = 1e4;
 
 #pragma omp parallel for reduction (+:true_positive,false_positive,true_negative,false_negative,sumSquaredError)
 	for (size_t index = 0; index < learnSet.size(); index++)

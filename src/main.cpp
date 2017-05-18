@@ -15,6 +15,7 @@
 #include "simple_fischer_lda.h"
 #include "logistic_regression.h"
 #include "k_nearest_neighbours.h"
+#include "weight_initializer.h"
 
 #include "mathvector_norm.h"
 
@@ -50,11 +51,35 @@ try
 	//kNN options
 	std::string weight_scheme = "const";
 	bool do_selecting = false;
+	//LR options
+	std::string weight_init_type   = "zeros";
+	std::string learning_rate_type = "const";
+	float learning_rate = 1e-3;
+	float regular_factor = 0.0;
+	bool weights_jog    = false;
+	bool auto_precision = false;
+	bool early_stop     = false;
+	size_t min_iterations = 0;
+	size_t max_iterations = 100;
+
 	if (predictor_type.compare("knn") == 0)
 	{
 		desc.add_options()
 		("weight-scheme,w", boost::program_options::value<std::string>(&weight_scheme), "scheme of weighting neighbours (const, exp, sigm, hyper, log)")
 		("fris-stolp,f", boost::program_options::bool_switch(&do_selecting), "do FRiS-STOLP objects selecting");
+	}
+	else if (predictor_type.compare("log_regressor") == 0)
+	{
+		desc.add_options()
+		("weight-init,w", boost::program_options::value<std::string>(&weight_init_type), "scheme of weight initialization (zeros, random, info_benefit, khi_2, mutual_info)")
+		("learning-rate-type,r", boost::program_options::value<std::string>(&learning_rate_type), "learning rate strategy (const, euclidean, div, optimization)")
+		("learning-rate,l" , boost::program_options::value<float>(&learning_rate)   , "base learning rate")
+		("regular-factor"  , boost::program_options::value<float>(&regular_factor)  , "regularization factor")
+		("weights-jog,j"   , boost::program_options::bool_switch(&weights_jog)      , "do weights jogging")
+		("auto-precision,a", boost::program_options::bool_switch(&auto_precision)   , "precision auto calculate")
+		("early-stop,s"    , boost::program_options::bool_switch(&early_stop)       , "sg early stopping")
+		("min-iter"        , boost::program_options::value<size_t>(&min_iterations) , "min iteration over collection count")
+		("max-iter"        , boost::program_options::value<size_t>(&max_iterations) , "max iteration over collection count");
 	}
 
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
@@ -74,6 +99,18 @@ try
 		if (do_selecting)
 			classifier_name += "_fris";
 	}
+	else if (predictor_type.compare("log_regressor") == 0)
+	{
+		classifier_name += "_" + weight_init_type;
+		classifier_name += "_" + std::to_string(learning_rate);
+		classifier_name += "_" + learning_rate_type;
+		classifier_name += "_" + std::to_string(regular_factor);
+		if (weights_jog)
+			classifier_name += "_jogging";
+		if (early_stop)
+			classifier_name += "_es";
+	}
+
 
 	classifier_name += suffix;
     boost::filesystem::path output_dir(outdir);
@@ -131,7 +168,37 @@ try
 		}
 		else
         {
-    	    predictor = new LogisticRegression(pool.getInstanceCount(), 3, 100);
+			weight_initializer_t weight_init = fill_zeroes;
+			if (weight_init_type.compare("zeros") == 0)
+				weight_init = fill_zeroes;
+			else if (weight_init_type.compare("random") == 0)
+				weight_init = randomize_fill;
+			else if (weight_init_type.compare("info_benefit") == 0)
+				weight_init = info_benefit_filler;
+			else if (weight_init_type.compare("mutual_info") == 0)
+				weight_init = mutual_info_filler;
+			else if (weight_init_type.compare("khi_2") == 0)
+				weight_init = khi_2_filler;
+
+			LogisticRegression::LearningRateTypes lr_type = LogisticRegression::LearningRateTypes::CONST;
+			if (learning_rate_type.compare("const") == 0)
+				lr_type = LogisticRegression::LearningRateTypes::CONST;
+			else if (learning_rate_type.compare("div") == 0)
+				lr_type = LogisticRegression::LearningRateTypes::DIV;
+			else if (learning_rate_type.compare("euclidean") == 0)
+				lr_type = LogisticRegression::LearningRateTypes::EUCLIDEAN;
+		
+			
+
+    	    predictor = new LogisticRegression( pool.getInstanceCount()
+					                          , min_iterations
+											  , max_iterations
+											  , weight_init
+											  , regular_factor
+											  , learning_rate
+											  , weights_jog
+											  , auto_precision
+											  , early_stop);
         }
 	    CrossValidation::test(predictor, pool, fold_count, it->first.c_str(), outdir, true);
 	}
