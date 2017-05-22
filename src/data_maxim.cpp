@@ -24,7 +24,7 @@ using namespace MachineLearning;
 using namespace MathCore::AlgebraCore::VectorCore;
 
 
-DataMaxim::DataMaxim(std::vector<std::string> _categories, MathVector<float>& _features)
+DataMaxim::DataMaxim(std::vector<std::string> _categories, MathVector<double>& _features)
 : Data(_categories, _features)
 {
 }
@@ -37,7 +37,7 @@ DataMaxim::DataMaxim()
 void DataMaxim::parseFrom(std::string _data, int feature_count)
 {
 
-	std::unordered_map<size_t,float> featuresValue;
+	std::unordered_map<size_t,double> featuresValue;
 
 	if (_data.size() == 0)
 	{
@@ -67,7 +67,7 @@ void DataMaxim::parseFrom(std::string _data, int feature_count)
 		featuresValue[position] = atof(feature_values.back().c_str());
 	}
 
-	(this->features) = *(new MathVector<float>(featuresValue));
+	(this->features) = *(new MathVector<double>(featuresValue));
 
 	this->features.completeWith(feature_count - this->features.getSize(), 0);
 

@@ -12,32 +12,32 @@ namespace MachineLearning
 	{
 		public:
 
-		typedef float(*Metric)(float true_positive, float false_positive, float true_negative, float false_negative);
+		typedef double(*Metric)(double true_positive, double false_positive, double true_negative, double false_negative);
 
-		static float RecallMetric(float true_positive, float false_positive, float true_negative, float false_negative)
+		static double RecallMetric(double true_positive, double false_positive, double true_negative, double false_negative)
 		{
 			return true_positive / (true_positive + false_negative);
 		}
 
-		static float PrecisionMetric(float true_positive, float false_positive, float true_negative, float false_negative)
+		static double PrecisionMetric(double true_positive, double false_positive, double true_negative, double false_negative)
 		{
 			return true_positive / (true_positive + false_positive);
 		}
 
-		static float F1ScoreMetric(float true_positive, float false_positive, float true_negative, float false_negative)
+		static double F1ScoreMetric(double true_positive, double false_positive, double true_negative, double false_negative)
 		{
-			float precision = PrecisionMetric(true_positive, false_positive, true_negative, false_negative);
-			float recall = RecallMetric(true_positive, false_positive, true_negative, false_negative);
+			double precision = PrecisionMetric(true_positive, false_positive, true_negative, false_negative);
+			double recall = RecallMetric(true_positive, false_positive, true_negative, false_negative);
 
 			return 2 * precision * recall / (precision + recall);
 		}
 
-		static float AccuracyMetric(float true_positive, float false_positive, float true_negative, float false_negative)
+		static double AccuracyMetric(double true_positive, double false_positive, double true_negative, double false_negative)
 		{
 			return (true_positive + true_negative) / (true_positive + false_positive + true_negative + false_negative);
 		}
 
-		static float Logloss(float real_value, float prediction)
+		static double Logloss(double real_value, double prediction)
 		{
 			prediction = (prediction + 1.) / 2.;
 			if (real_value == -1.0)
@@ -48,7 +48,7 @@ namespace MachineLearning
 			return (-1.0) * prediction * log2(prediction);
 		}
 
-		static float RMSE(float real_value, float prediction)
+		static double RMSE(double real_value, double prediction)
 		{
 			return std::pow(prediction - real_value, 2.0);
 		}

@@ -9,28 +9,28 @@ using namespace  MathCore::AlgebraCore::VectorCore;
 namespace MachineLearning
 {
 
-	float& Instance::operator [](int index) const
+	double& Instance::operator [](int index) const
 	{
-		return *(new float(features.get().getElement((size_t)index)));
+		return *(new double(features.get().getElement((size_t)index)));
 	}
 
-	float Instance::getGoal() const
+	double Instance::getGoal() const
 	{
 		return goal;
 	}
 
-	MathVector<float>& Instance::getFeatures() const
+	MathVector<double>& Instance::getFeatures() const
 	{
 		return features.get();
 	}
 
 
-	Instance::operator MathVector<float>&()
+	Instance::operator MathVector<double>&()
 	{
 		return features.get();
 	}
 
-	Instance::operator float() const
+	Instance::operator double() const
 	{
 		return this->goal;
 	}

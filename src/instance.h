@@ -16,25 +16,25 @@ namespace MachineLearning
 	{
 	private:
 
-		std::reference_wrapper<MathVector<float>> features;
-		float goal;
+		std::reference_wrapper<MathVector<double>> features;
+		double goal;
 
 	public:
-		Instance(MathVector<float>& _features, float _goal)
+		Instance(MathVector<double>& _features, double _goal)
 			: features(_features), goal(_goal)
 		{
 		}
 
 
-		float& operator [](int index) const;
+		double& operator [](int index) const;
 
-		float getGoal() const;
+		double getGoal() const;
 
-		MathVector<float>& getFeatures() const;
+		MathVector<double>& getFeatures() const;
 
-		operator MathVector<float>&();
+		operator MathVector<double>&();
 
-		operator float() const;
+		operator double() const;
 
 		size_t getFeaturesSize();
 

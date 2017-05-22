@@ -18,24 +18,24 @@ using namespace MathCore::AlgebraCore::VectorCore;
 
 namespace MachineLearning
 {
-	void fill_zeroes( MathVector<float>& weights
-			        , float& treshold
+	void fill_zeroes( MathVector<double>& weights
+			        , double& treshold
 					, const std::vector<Instance>& objects)
 	{
-		weights = MathVector<float>(objects.front().getFeatures().getSize(), 0);
+		weights = MathVector<double>(objects.front().getFeatures().getSize(), 0);
 		treshold = 0;
 	}
 
-	void randomize_fill( MathVector<float>& weights
-			           , float& treshold
+	void randomize_fill( MathVector<double>& weights
+			           , double& treshold
 			           , const std::vector<Instance>& objects)
 	{
 		size_t size = objects.front().getFeatures().getSize(); 
 		std::random_device rd;
 		std::mt19937 gen(rd());
-		std::uniform_real_distribution<float> distribution(-1 / (float)size, 1 / (float)size);
+		std::uniform_real_distribution<double> distribution(-1 / (double)size, 1 / (double)size);
 
-		std::vector<float> values;
+		std::vector<double> values;
 
 		for (size_t index = 0; index < size; index++)
 		{
@@ -47,14 +47,14 @@ namespace MachineLearning
 	}
 
 	void objects_counter( const std::vector<Instance>& objects
-			            , std::vector<std::pair<float, float>>& counters
-						, std::pair<float, float>& total_counter)
+			            , std::vector<std::pair<double, double>>& counters
+						, std::pair<double, double>& total_counter)
 	{
-		counters = std::vector<std::pair<float, float>>(objects.front().getFeatures().getSize(), {0.0, 0.0});
+		counters = std::vector<std::pair<double, double>>(objects.front().getFeatures().getSize(), {0.0, 0.0});
 		for (const Instance& object: objects)
 		{
-		    MathVector<float>::const_fast_iterator it  = object.getFeatures().const_fast_begin();
-		    MathVector<float>::const_fast_iterator end = object.getFeatures().const_fast_end();
+		    MathVector<double>::const_fast_iterator it  = object.getFeatures().const_fast_begin();
+		    MathVector<double>::const_fast_iterator end = object.getFeatures().const_fast_end();
 			for (; it != end; ++it)
 				if (object.getGoal() == 1.0)
 					counters[it.index()].first += 1.0;
@@ -67,7 +67,7 @@ namespace MachineLearning
 				total_counter.second += 1.0;
 		}
 
-		for (std::pair<float, float>& counter: counters)
+		for (std::pair<double, double>& counter: counters)
 		{
 			counter.first  = counter.first == 0.0  ? 1e-6 : counter.first;
 			counter.second = counter.second == 0.0 ? 1e-6 : counter.second;
@@ -75,30 +75,30 @@ namespace MachineLearning
 	}
 
 	void calc_stat_values( const std::vector<Instance>& objects
-						 , MathVector<float>& weights
-						 , float& treshold
-						 , std::function<float(std::pair<float, float>&, std::pair<float, float>&)> calculator)
+						 , MathVector<double>& weights
+						 , double& treshold
+						 , std::function<double(std::pair<double, double>&, std::pair<double, double>&)> calculator)
 	{
 #define normalize(value, max, min) (value - min) / (max - min)
-		std::vector<std::pair<float, float>> counters;
-		std::pair<float, float>              total_counter;
+		std::vector<std::pair<double, double>> counters;
+		std::pair<double, double>              total_counter;
 
 		objects_counter(objects, counters, total_counter);
-		std::vector<float> values;
+		std::vector<double> values;
 		values.reserve(counters.size());
-		float average = 0.0;
-		for (std::pair<float, float>& counter: counters)
+		double average = 0.0;
+		for (std::pair<double, double>& counter: counters)
 		{
-			float value = calculator(counter, total_counter);
+			double value = calculator(counter, total_counter);
 			average += value;
 			values.push_back(value);
 		}
 
-		float max_value = *std::max_element(values.begin(), values.end());
-		float min_value = *std::min_element(values.begin(), values.end());
+		double max_value = *std::max_element(values.begin(), values.end());
+		double min_value = *std::min_element(values.begin(), values.end());
 
 #pragma omp parallel for
-		for (float& value: values)
+		for (double& value: values)
 			value = normalize(isnan(value) ? min_value : value, max_value, min_value) / 1e2;
 
 		average /= counters.size();
@@ -109,27 +109,27 @@ namespace MachineLearning
 #undef normalize
 	}
 
-	void info_benefit_filler( MathVector<float>& weights
-			                , float& treshold
+	void info_benefit_filler( MathVector<double>& weights
+			                , double& treshold
 					        , const std::vector<Instance>& objects)
 	{
-		auto calc_info_benefit = []( std::pair<float, float>& counter
-				                   , std::pair<float, float>& total_counter)
-			-> float
+		auto calc_info_benefit = []( std::pair<double, double>& counter
+				                   , std::pair<double, double>& total_counter)
+			-> double
 		{
-			float summary = total_counter.first + total_counter.second;
-			float info_categories = (total_counter.first * log2(total_counter.first / summary) +
+			double summary = total_counter.first + total_counter.second;
+			double info_categories = (total_counter.first * log2(total_counter.first / summary) +
 				                     total_counter.second * log2(total_counter.second / summary)) / summary;
 
-			float feature_summary     = counter.first + counter.second;
-			float no_feature_summary  = summary - feature_summary;
-			float no_feature_positive = total_counter.first  - counter.first;
-			float no_feature_negative = total_counter.second - counter.second;
+			double feature_summary     = counter.first + counter.second;
+			double no_feature_summary  = summary - feature_summary;
+			double no_feature_positive = total_counter.first  - counter.first;
+			double no_feature_negative = total_counter.second - counter.second;
 
-			float info_feature = (counter.first * log2(counter.first / feature_summary) + 
+			double info_feature = (counter.first * log2(counter.first / feature_summary) + 
 				                  counter.second * log2(counter.second / feature_summary)) / summary;
 
-			float info_no_feature = (no_feature_positive * log2(no_feature_positive / no_feature_summary) +
+			double info_no_feature = (no_feature_positive * log2(no_feature_positive / no_feature_summary) +
 					                 no_feature_negative * log2(no_feature_negative / no_feature_summary)) / summary;
 
 			return -info_categories + (info_feature + info_no_feature);
@@ -138,20 +138,20 @@ namespace MachineLearning
 		calc_stat_values(objects, weights, treshold, calc_info_benefit);
 	}
 
-	void mutual_info_filler( MathVector<float>& weights
-			               , float& treshold
+	void mutual_info_filler( MathVector<double>& weights
+			               , double& treshold
 					       , const std::vector<Instance>& objects)
 	{
 #define mutual_info(feature_category, feature, category, count) log2((feature_category * count) / (category * feature)) * (feature_category / feature)
-		auto calc_mutual_info = []( std::pair<float, float>& counter
-				                  , std::pair<float, float>& total_counter)
-			-> float
+		auto calc_mutual_info = []( std::pair<double, double>& counter
+				                  , std::pair<double, double>& total_counter)
+			-> double
 		{
-			float summary             = total_counter.first + total_counter.second;
-			float feature_summary     = counter.first + counter.second;
-			float no_feature_summary  = summary - feature_summary;
-			float no_feature_positive = total_counter.first  - counter.first;
-			float no_feature_negative = total_counter.second - counter.second;
+			double summary             = total_counter.first + total_counter.second;
+			double feature_summary     = counter.first + counter.second;
+			double no_feature_summary  = summary - feature_summary;
+			double no_feature_positive = total_counter.first  - counter.first;
+			double no_feature_negative = total_counter.second - counter.second;
 
 			return mutual_info(counter.first,       feature_summary,    total_counter.first,  summary) +
 				   mutual_info(counter.second,      feature_summary,    total_counter.second, summary) +
@@ -163,20 +163,20 @@ namespace MachineLearning
 #undef mutual_info
 	}
 
-	void khi_2_filler( MathVector<float>& weights
-			         , float& treshold
+	void khi_2_filler( MathVector<double>& weights
+			         , double& treshold
 					 , const std::vector<Instance>& objects)
 	{
 #define khi_2(feature_category, feature, category, count) pow(count * feature_category - feature * category, 2.0) / (feature * category * count)
-		auto calc_khi_2 = []( std::pair<float, float>& counter
-				            , std::pair<float, float>& total_counter)
-			-> float
+		auto calc_khi_2 = []( std::pair<double, double>& counter
+				            , std::pair<double, double>& total_counter)
+			-> double
 		{
-			float summary             = total_counter.first + total_counter.second;
-			float feature_summary     = counter.first + counter.second;
-			float no_feature_summary  = summary - feature_summary;
-			float no_feature_positive = total_counter.first  - counter.first;
-			float no_feature_negative = total_counter.second - counter.second;
+			double summary             = total_counter.first + total_counter.second;
+			double feature_summary     = counter.first + counter.second;
+			double no_feature_summary  = summary - feature_summary;
+			double no_feature_positive = total_counter.first  - counter.first;
+			double no_feature_negative = total_counter.second - counter.second;
 
 			return khi_2(counter.first,       feature_summary,    total_counter.first,  summary) +
 				   khi_2(counter.second,      feature_summary,    total_counter.second, summary) +

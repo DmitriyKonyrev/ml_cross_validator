@@ -18,17 +18,17 @@ namespace MachineLearning
 	{
 		protected:
 
-			float threshold;
+			double threshold;
 
-			std::pair<float, float> prioriProbability;
+			std::pair<double, double> prioriProbability;
 
-			std::pair<float, float> fine;
+			std::pair<double, double> fine;
 
-			MathVector<float> alpha_positive;
-			MathVector<float> alpha_negative;
+			MathVector<double> alpha_positive;
+			MathVector<double> alpha_negative;
 
-			float betta_positive;
-			float betta_negative;
+			double betta_positive;
+			double betta_negative;
 
 		public:
 
@@ -38,17 +38,21 @@ namespace MachineLearning
 				fine = std::make_pair(1., 1.);
 			};
 
-			void setFine(std::pair<float, float> _fine);
+			void setFine(std::pair<double, double> _fine);
 
-			float predict(MathVector<float>& features);
+			double predict(MathVector<double>& features);
 
-			void learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve);
+			void learn( std::vector<Instance>& learnSet
+					  , std::vector<double>& objectsWeights
+					  , std::vector<std::pair<double, double>>& learning_curve);
+
+			Predictor* clone() const { return new SimpleFischerLDA(*this);};
 
 		protected:
 
-			MathMatrix<float>& sampleMeans(std::vector<MathVector<float>>& learnF, MathVector<float>& learnY);
+			MathMatrix<double>& sampleMeans(std::vector<MathVector<double>>& learnF, MathVector<double>& learnY);
 
-			void covariation(MathMatrix<float>& learnSet, MathVector<float>& learnY, MathMatrix<float>& _sampleMeans, MathMatrix<float>& transpose_cov);
+			void covariation(MathMatrix<double>& learnSet, MathVector<double>& learnY, MathMatrix<double>& _sampleMeans, MathMatrix<double>& transpose_cov);
 
 			size_t get_model_complexity();
 	};

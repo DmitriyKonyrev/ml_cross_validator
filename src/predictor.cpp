@@ -11,19 +11,19 @@
 
 using namespace MachineLearning;
 
-std::vector<float> Predictor::rmse(std::vector<Instance>& instances)
+std::vector<double> Predictor::rmse(std::vector<Instance>& instances)
 {
-	float sumSquaredError = 0.;
+	double sumSquaredError = 0.;
 
-	float true_positive = 0.;
-	float false_positive = 0.;
-	float true_negative = 0.;
-	float false_negative = 0.;
+	double true_positive = 0.;
+	double false_positive = 0.;
+	double true_negative = 0.;
+	double false_negative = 0.;
 	
 	for (size_t index = 0; index < instances.size(); index++)
 	{
 
-		float prediction = this->predict(instances.at(index).getFeatures());
+		double prediction = this->predict(instances.at(index).getFeatures());
 
 
 		if (prediction == instances.at(index).getGoal())
@@ -52,7 +52,7 @@ std::vector<float> Predictor::rmse(std::vector<Instance>& instances)
 
 	sumSquaredError /= instances.size();
 
-	std::vector<float>* characteristics = new std::vector<float>();
+	std::vector<double>* characteristics = new std::vector<double>();
 	characteristics->push_back(std::pow(sumSquaredError, 0.5));
 	characteristics->push_back(true_positive);
 	characteristics->push_back(false_positive);
@@ -62,25 +62,27 @@ std::vector<float> Predictor::rmse(std::vector<Instance>& instances)
 	return *characteristics;
 }
 
-float Predictor::predict(MathVector<float>& features)
+double Predictor::predict(MathVector<double>& features)
 {
 	return 0;
 }
 
-void Predictor::learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve)
+void Predictor::learn( std::vector<Instance>& learnSet
+		             , std::vector<double>& objectsWeights
+		             , std::vector<std::pair<double, double>>& learning_curve)
 {
 	return;
 }
 
-std::vector<float> Predictor::test(std::vector<Instance>& learnSet, std::vector<Metrics::Metric>& metrics)
+std::vector<double> Predictor::test(std::vector<Instance>& learnSet, std::vector<Metrics::Metric>& metrics)
 {
-	std::vector<float>* results = new std::vector<float>();
-	float sumSquaredError = 0.;
+	std::vector<double>* results = new std::vector<double>();
+	double sumSquaredError = 0.;
 
-	float true_positive = 0.;
-	float false_positive = 0.;
-	float true_negative = 0.;
-	float false_negative = 0.;
+	double true_positive = 0.;
+	double false_positive = 0.;
+	double true_negative = 0.;
+	double false_negative = 0.;
 	
 	size_t total_count = 0;
 	size_t part = 1e4;
@@ -89,8 +91,8 @@ std::vector<float> Predictor::test(std::vector<Instance>& learnSet, std::vector<
 	for (size_t index = 0; index < learnSet.size(); index++)
 	{
 
-		float prediction = this->predict(learnSet.at(index).getFeatures());
-		float sse = std::pow(prediction - learnSet.at(index).getGoal(), 2);
+		double prediction = this->predict(learnSet.at(index).getFeatures());
+		double sse = std::pow(prediction - learnSet.at(index).getGoal(), 2);
 		sumSquaredError = sumSquaredError + sse;
 
 		if (prediction == learnSet.at(index).getGoal())
@@ -128,7 +130,7 @@ std::vector<float> Predictor::test(std::vector<Instance>& learnSet, std::vector<
 
 	for (size_t index = 0; index < metrics.size(); index++)
 	{
-		float result = metrics.at(index)(true_positive, false_positive, true_negative, false_negative);
+		double result = metrics.at(index)(true_positive, false_positive, true_negative, false_negative);
 
 		results->push_back(result);
 	}

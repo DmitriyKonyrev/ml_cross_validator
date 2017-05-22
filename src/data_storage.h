@@ -33,8 +33,8 @@ namespace MachineLearning
 
 		virtual void parseFromFile(std::string fileName);
 
-		Pool& toPool(std::string category, size_t& positive_count, float& blur_factor);
-		Pool& toLinearPool(std::string category, size_t& positive_count, float& blur_factor);
+		Pool& toPool(std::string category, size_t& positive_count, double& blur_factor);
+		Pool& toLinearPool(std::string category, size_t& positive_count, double& blur_factor);
 
 		std::vector<std::pair<std::string, size_t> > getCategories();
 

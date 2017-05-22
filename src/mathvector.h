@@ -399,8 +399,8 @@ namespace MathCore
 			{
 				T result = 0;
 
-				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
-				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
+				double thisLoadFactor = (double)this->not_nulls.size() / (double)this->size;
+				double otherLoadFactor = (double)other.not_nulls.size() / (double)other.size;
 
 				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
@@ -684,8 +684,8 @@ namespace MathCore
 
 			template<typename T> MathVector<T>  MathVector<T>::operator+(const MathVector<T>& other)
 			{
-				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
-				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
+				double thisLoadFactor = (double)this->not_nulls.size() / (double)this->size;
+				double otherLoadFactor = (double)other.not_nulls.size() / (double)other.size;
 				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
 					if (this->not_nulls.size() > other.not_nulls.size())
@@ -765,8 +765,8 @@ namespace MathCore
 			template<typename T>MathVector<T> MathVector<T>::operator-(const MathVector<T>& other)
 			{
 				MathVector<T> result(this->size, 0.0);
-				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
-				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
+				double thisLoadFactor = (double)this->not_nulls.size() / (double)this->size;
+				double otherLoadFactor = (double)other.not_nulls.size() / (double)other.size;
 
 				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
@@ -862,8 +862,8 @@ namespace MathCore
 
 			template<typename T> MathVector<T>& MathVector<T>::operator+=(const MathVector<T>& other)
 			{
-				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
-				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
+				double thisLoadFactor = (double)this->not_nulls.size() / (double)this->size;
+				double otherLoadFactor = (double)other.not_nulls.size() / (double)other.size;
 
 				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{
@@ -959,8 +959,8 @@ namespace MathCore
 
 			template<typename T> MathVector<T>& MathVector<T>::operator-=(const MathVector<T>& other)
 			{
-				float thisLoadFactor = (float)this->not_nulls.size() / (float)this->size;
-				float otherLoadFactor = (float)other.not_nulls.size() / (float)other.size;
+				double thisLoadFactor = (double)this->not_nulls.size() / (double)this->size;
+				double otherLoadFactor = (double)other.not_nulls.size() / (double)other.size;
 
 				if (thisLoadFactor <= 0.5 || otherLoadFactor <= 0.5)
 				{

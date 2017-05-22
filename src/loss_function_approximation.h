@@ -10,12 +10,12 @@ namespace MachineLearning
 	{
 		public:
 
-			virtual float calc(float margin)
+			virtual double calc(double margin)
 			{
 				return 0;
 			}
 
-			virtual float dx(float margin)
+			virtual double dx(double margin)
 			{
 				return 0;
 			}
@@ -25,12 +25,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float margin)
+			double calc(double margin)
 			{
 				return pow(margin, 2);
 			}
 
-			float dx(float margin)
+			double dx(double margin)
 			{
 				return margin;
 			}
@@ -40,12 +40,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float margin)
+			double calc(double margin)
 			{
 				return 1 - margin;
 			}
 
-			float dx(float margin)
+			double dx(double margin)
 			{
 				return - margin;
 			}
@@ -55,12 +55,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float margin)
+			double calc(double margin)
 			{
 				return 2 * pow((1 + std::exp(margin)), -1);
 			}
 
-			float dx(float margin)
+			double dx(double margin)
 			{
 				return -2 * pow((1 + std::exp(margin)), -2);
 			}
@@ -70,12 +70,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float margin)
+			double calc(double margin)
 			{
 				return 2 * log2(1 + std::exp(-margin));
 			}
 
-			float dx(float margin)
+			double dx(double margin)
 			{
 				return -std::exp(-margin) / ((1 + std::exp(-margin)) + log(2));
 			}
@@ -85,12 +85,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float margin)
+			double calc(double margin)
 			{
 				return std::exp(-margin);
 			}
 
-			float dx(float margin)
+			double dx(double margin)
 			{
 				return -std::exp(-margin);
 			}

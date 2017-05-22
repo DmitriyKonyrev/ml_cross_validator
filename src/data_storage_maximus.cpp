@@ -32,7 +32,7 @@ void DataStorageMaximus::parseFromFile(std::string fileName)
 	fstream fin;
 	fin.open(fileName.c_str());
 
-	float max = 0;
+	double max = 0;
 	size_t feature_size = 0;
 
 

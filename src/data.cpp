@@ -20,7 +20,7 @@ Data::Data()
 {
 }
 
-Data::Data(std::vector<std::string> _categories, MathVector<float>& _features)
+Data::Data(std::vector<std::string> _categories, MathVector<double>& _features)
 : categories(_categories), features(_features)
 {
 }
@@ -30,7 +30,7 @@ Data::Data(std::string _data)
 	this->parseFrom(_data);
 }
 
-float Data::maximum()
+double Data::maximum()
 {
 	return this->features.getMaximalElement();
 }
@@ -47,14 +47,14 @@ void Data::completeFeatures(size_t counts)
 	return;
 }
 
-float Data::at(size_t index)
+double Data::at(size_t index)
 {
 	return this->features.getElement(index);
 }
 
-Instance& Data::toInstance(std::string category, size_t& positive_count, float& blur_factor)
+Instance& Data::toInstance(std::string category, size_t& positive_count, double& blur_factor)
 {
-	float goal = -1;
+	double goal = -1;
 
 	if (std::find(this->categories.begin(), this->categories.end(), category) != this->categories.end())
 	{
@@ -68,9 +68,9 @@ Instance& Data::toInstance(std::string category, size_t& positive_count, float& 
 	return *instance;
 }
 
-Instance& Data::toLinearInstance(std::string category, size_t& positive_count, float& blur_factor)
+Instance& Data::toLinearInstance(std::string category, size_t& positive_count, double& blur_factor)
 {
-	float goal = 0;
+	double goal = 0;
 
 	if (std::find(this->categories.begin(), this->categories.end(), category) != this->categories.end())
 	{
@@ -103,7 +103,7 @@ void Data::parseFrom(std::string _data)
 
 	boost::split(features, datas.back(), boost::is_any_of(" "));
 
-	std::unordered_map<size_t, float> rawFeatures;
+	std::unordered_map<size_t, double> rawFeatures;
 	std::set<size_t> not_nulls;
 
 	for (std::vector<std::string>::iterator it = features.begin(); it != features.end(); ++it)
@@ -114,7 +114,7 @@ void Data::parseFrom(std::string _data)
 		not_nulls.insert(position);
 	}
 
-	this->features = *(new MathVector<float>(rawFeatures, not_nulls));
+	this->features = *(new MathVector<double>(rawFeatures, not_nulls));
 
 	return;
 }

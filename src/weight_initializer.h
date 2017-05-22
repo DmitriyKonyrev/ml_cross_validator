@@ -19,27 +19,27 @@ using namespace MathCore::AlgebraCore::VectorCore;
 
 namespace MachineLearning
 {
-	typedef std::function<void(MathVector<float>&, float&, const std::vector<Instance>&)> weight_initializer_t;
+	typedef std::function<void(MathVector<double>&, double&, const std::vector<Instance>&)> weight_initializer_t;
 
-	void fill_zeroes( MathVector<float>& weights
-			        , float& treshold
+	void fill_zeroes( MathVector<double>& weights
+			        , double& treshold
 					, const std::vector<Instance>& objects);
 
-	void randomize_fill( MathVector<float>& weights
-			           , float& treshold
+	void randomize_fill( MathVector<double>& weights
+			           , double& treshold
 			           , const std::vector<Instance>& objects);
 
 
-	void info_benefit_filler( MathVector<float>& weights
-			                , float& treshold
+	void info_benefit_filler( MathVector<double>& weights
+			                , double& treshold
 					        , const std::vector<Instance>& objects);
 
-	void mutual_info_filler( MathVector<float>& weights
-			               , float& treshold
+	void mutual_info_filler( MathVector<double>& weights
+			               , double& treshold
 					       , const std::vector<Instance>& objects);
 
-	void khi_2_filler( MathVector<float>& weights
-			         , float& treshold
+	void khi_2_filler( MathVector<double>& weights
+			         , double& treshold
 					 , const std::vector<Instance>& objects);
 }
 #endif //WEIGHT_INITIALIZER_H

@@ -40,7 +40,7 @@ void DataStorage::parseFromFile(std::string fileName)
 	fstream fin;
 	fin.open(fileName.c_str());
 
-	float max = 0;
+	double max = 0;
 
 	std::map < std::string, size_t> _categories;
 
@@ -57,7 +57,7 @@ void DataStorage::parseFromFile(std::string fileName)
 			Data data(line);
 			this->datas.push_back(data);
 
-			float _max = data.featuresSize();
+			double _max = data.featuresSize();
 
 			if (_max > max)
 			{
@@ -99,7 +99,7 @@ void DataStorage::parseFromFile(std::string fileName)
 	return;
 }
 
-Pool& DataStorage::toPool(std::string category, size_t& positive_count, float& blur_factor)
+Pool& DataStorage::toPool(std::string category, size_t& positive_count, double& blur_factor)
 {
 	std::vector<Instance>* instances = new std::vector<Instance>();
 
@@ -119,7 +119,7 @@ Pool& DataStorage::toPool(std::string category, size_t& positive_count, float& b
 	return *pool;
 }
 
-Pool& DataStorage::toLinearPool(std::string category, size_t& positive_count, float& blur_factor)
+Pool& DataStorage::toLinearPool(std::string category, size_t& positive_count, double& blur_factor)
 {
 	std::vector<Instance>* instances = new std::vector<Instance>();
 	positive_count = 0;

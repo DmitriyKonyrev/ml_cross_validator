@@ -2,6 +2,7 @@
 #define PREDICTOR_H
 
 #include <vector>
+#include <memory>
 
 #ifndef INSTANCE_H
 #include "instance.h"
@@ -27,18 +28,24 @@ namespace MachineLearning
 			}
 
 
-			virtual float predict(MathVector<float>& features);
+			virtual double predict(MathVector<double>& features);
 
-			virtual void learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve);
-			virtual std::vector<float> test(std::vector<Instance>& testSet, std::vector<Metrics::Metric>& metrics);
+			virtual void learn( std::vector<Instance>& learnSet
+					          , std::vector<double>& objectsWeights
+					          , std::vector<std::pair<double, double>>& learning_curve);
+			virtual std::vector<double> test(std::vector<Instance>& testSet, std::vector<Metrics::Metric>& metrics);
 
 			size_t getFeaturesCount();
 			virtual size_t get_model_complexity() = 0;
+
+			virtual Predictor* clone() const = 0;
 		protected:
 
-			std::vector<float> rmse(std::vector<Instance>& instances);
+			std::vector<double> rmse(std::vector<Instance>& instances);
 
 	};
+
+	typedef std::shared_ptr<Predictor> PredictorPtr;
 
 }
 

@@ -6,15 +6,15 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+#include "ada_boost.h"
 #include "data_storage.h"
-#include"data_storage_maximus.h"
-
+#include "data_storage_maximus.h"
 #include "k_fold_cross_validation.h"
-
 #include "predictor.h"
 #include "simple_fischer_lda.h"
 #include "logistic_regression.h"
 #include "k_nearest_neighbours.h"
+#include "weak_predictor.h"
 #include "weight_initializer.h"
 
 #include "mathvector_norm.h"
@@ -42,7 +42,7 @@ try
     ("output-path,o", boost::program_options::value<std::string>(&outdir), "directory with output files")
 	("suffix,s", boost::program_options::value<std::string>(&suffix), "suffix of the output directory")
     ("fold-count,k", boost::program_options::value<uint32_t>(&fold_count), "count of folds to validate")
-    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn)")
+    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn, weak, adaboost)")
     ;
     boost::program_options::variables_map vm;
 	 boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
@@ -54,32 +54,58 @@ try
 	//LR options
 	std::string weight_init_type   = "zeros";
 	std::string learning_rate_type = "const";
-	float learning_rate = 1e-3;
-	float regular_factor = 0.0;
+	double learning_rate = 1e-3;
+	double regular_factor = 0.0;
 	bool weights_jog    = false;
 	bool auto_precision = false;
 	bool early_stop     = false;
 	size_t min_iterations = 0;
 	size_t max_iterations = 100;
-
-	if (predictor_type.compare("knn") == 0)
+	//Weak options
+	std::string weak_impurity = "gini";
+	//AdaBoost options
+	std::string estimator_type   = "log_regressor";
+	size_t estimators            = 200;
+	bool bagging                 = false;
+	double bagging_factor         = 1.0;
+	std::string quality_criteria = "f1";
+	double max_quality            = 0.98;
+	bool ensemble_method = predictor_type.compare("adaboost") == 0;
+	if (predictor_type.compare("adaboost") == 0)
+	{
+		desc.add_options()
+		("estimator-type,e", boost::program_options::value<std::string>(&estimator_type), "type of estimator-predictior (log_regressor, ldf, knn, weak)")
+		("estimators-count"        , boost::program_options::value<size_t>(&estimators), "count of estimators")
+		("bagging,b", boost::program_options::bool_switch(&bagging), "do bagging over learn set")
+		("bagging-factor" , boost::program_options::value<double>(&bagging_factor)   , "volume of chosen data from learn set")
+		("quality-criteria,q", boost::program_options::value<std::string>(&quality_criteria), "criteria of stop-value quality")
+		("max-quality" , boost::program_options::value<double>(&max_quality)   , "maximal quality value");
+		boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+		boost::program_options::notify(vm);
+	}
+	if (predictor_type.compare("knn") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 	{
 		desc.add_options()
 		("weight-scheme,w", boost::program_options::value<std::string>(&weight_scheme), "scheme of weighting neighbours (const, exp, sigm, hyper, log)")
 		("fris-stolp,f", boost::program_options::bool_switch(&do_selecting), "do FRiS-STOLP objects selecting");
 	}
-	else if (predictor_type.compare("log_regressor") == 0)
+	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 	{
 		desc.add_options()
 		("weight-init,w", boost::program_options::value<std::string>(&weight_init_type), "scheme of weight initialization (zeros, random, info_benefit, khi_2, mutual_info)")
 		("learning-rate-type,r", boost::program_options::value<std::string>(&learning_rate_type), "learning rate strategy (const, euclidean, div, optimization)")
-		("learning-rate,l" , boost::program_options::value<float>(&learning_rate)   , "base learning rate")
-		("regular-factor"  , boost::program_options::value<float>(&regular_factor)  , "regularization factor")
+		("learning-rate,l" , boost::program_options::value<double>(&learning_rate)   , "base learning rate")
+		("regular-factor"  , boost::program_options::value<double>(&regular_factor)  , "regularization factor")
 		("weights-jog,j"   , boost::program_options::bool_switch(&weights_jog)      , "do weights jogging")
 		("auto-precision,a", boost::program_options::bool_switch(&auto_precision)   , "precision auto calculate")
 		("early-stop,s"    , boost::program_options::bool_switch(&early_stop)       , "sg early stopping")
 		("min-iter"        , boost::program_options::value<size_t>(&min_iterations) , "min iteration over collection count")
 		("max-iter"        , boost::program_options::value<size_t>(&max_iterations) , "max iteration over collection count");
+	}
+	if (predictor_type.compare("weak") == 0 || (ensemble_method && estimator_type.compare("weak") == 0))
+	{
+		desc.add_options()
+		("weak-impurity,w", boost::program_options::value<std::string>(&weak_impurity), "weak impurity type (info_benefit, khi_2, mutual_info, gini)");
 	}
 
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
@@ -93,13 +119,20 @@ try
     }
 
 	classifier_name += predictor_type;
-	if (predictor_type.compare("knn") == 0)
+    if (predictor_type.compare("adaboost") == 0)
+	{
+		classifier_name += "_" + std::to_string(estimators);
+		if (bagging)
+			classifier_name += "_bagging" + std::to_string(bagging_factor);
+		classifier_name += "_" + estimator_type;
+	}
+	if (predictor_type.compare("knn") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 	{
 		classifier_name += "_" + weight_scheme;
 		if (do_selecting)
 			classifier_name += "_fris";
 	}
-	else if (predictor_type.compare("log_regressor") == 0)
+	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0))
 	{
 		classifier_name += "_" + weight_init_type;
 		classifier_name += "_" + std::to_string(learning_rate);
@@ -109,6 +142,10 @@ try
 			classifier_name += "_jogging";
 		if (early_stop)
 			classifier_name += "_es";
+	}
+	if (predictor_type.compare("weak") == 0 || (ensemble_method && estimator_type.compare("weak") == 0))
+	{
+		classifier_name += "_" + weak_impurity;
 	}
 
 
@@ -140,17 +177,32 @@ try
         index++;
 		std::cout << "Category: " << it->first.c_str() << " | Volume: " << it->second << std::endl;
 		size_t positive_count = 0;
-		float blur_factor = 0.0;
+		double blur_factor = 0.0;
 		Pool pool =  storage.toPool(it->first, positive_count, blur_factor);
 	    std::cout << "Data are processed: positive count - " << positive_count << " blur factor - " << blur_factor << std::endl;
-		dataset_marking_path_file << it->first.c_str() << "\t" << (float)positive_count / (float)pool.getInstanceCount() 
+		dataset_marking_path_file << it->first.c_str() << "\t" << (double)positive_count / (double)pool.getInstanceCount() 
 			                                           << "\t" << blur_factor << std::endl;
+
         Predictor* predictor;
-        if (predictor_type.compare("ldf") == 0)
+        if (predictor_type.compare("ldf") == 0 || (ensemble_method && estimator_type.compare("ldf") == 0))
         {
             predictor = new SimpleFischerLDA(pool.getInstanceCount());
         }
-        else if (predictor_type.compare("knn") == 0)
+		if (predictor_type.compare("weak") == 0 || (ensemble_method && estimator_type.compare("weak") == 0))
+		{
+			WeakClassifier::PurityType purity_type = WeakClassifier::PurityType::INFO_BENEFIT;
+			if (weak_impurity.compare("gini") == 0)
+				purity_type = WeakClassifier::PurityType::GINI;
+			else if (weak_impurity.compare("info_benefit") == 0)
+				purity_type = WeakClassifier::PurityType::INFO_BENEFIT;
+			else if (weak_impurity.compare("mutual_info") == 0)
+				purity_type = WeakClassifier::PurityType::MUTUAL;
+			else if (weak_impurity.compare("khi_2") == 0)
+				purity_type = WeakClassifier::PurityType::KHI_2;
+
+			predictor = new WeakClassifier(pool.getInstanceCount(), purity_type);
+		}
+        if (predictor_type.compare("knn") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 		{
 			neighbour_weight_t weight;
 			if (weight_scheme.compare("const") == 0)
@@ -163,10 +215,10 @@ try
 				weight = KNearestNeighbours::hyper_weight;
 			else
 				weight = KNearestNeighbours::log_weight;
-			std::shared_ptr<MathVectorNorm<float>> distance(new EuclideanNorm<float>());
+			std::shared_ptr<MathVectorNorm<double>> distance(new EuclideanNorm<double>());
 			predictor = new KNearestNeighbours(pool.getInstanceCount(), distance, weight, do_selecting);
 		}
-		else
+		if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0))
         {
 			weight_initializer_t weight_init = fill_zeroes;
 			if (weight_init_type.compare("zeros") == 0)
@@ -187,8 +239,6 @@ try
 				lr_type = LogisticRegression::LearningRateTypes::DIV;
 			else if (learning_rate_type.compare("euclidean") == 0)
 				lr_type = LogisticRegression::LearningRateTypes::EUCLIDEAN;
-		
-			
 
     	    predictor = new LogisticRegression( pool.getInstanceCount()
 					                          , min_iterations
@@ -200,6 +250,29 @@ try
 											  , auto_precision
 											  , early_stop);
         }
+
+		if (predictor_type.compare("adaboost") == 0)
+		{
+			Metrics::Metric quality = Metrics::F1ScoreMetric;
+			if (quality_criteria.compare("precision") == 0)
+				quality = Metrics::PrecisionMetric;
+			else if (quality_criteria.compare("recall") == 0)
+				quality = Metrics::RecallMetric;
+			else if (quality_criteria.compare("f1") == 0)
+				quality = Metrics::F1ScoreMetric;
+			else if (quality_criteria.compare("accuracy") == 0)
+				quality = Metrics::AccuracyMetric;
+			PredictorPtr estimator(predictor->clone());
+			predictor = new AdaBoost( pool.getInstanceCount()
+					                , estimator
+									, estimators
+									, quality
+									, max_quality
+									, bagging
+									, bagging_factor);
+		
+		}
+
 	    CrossValidation::test(predictor, pool, fold_count, it->first.c_str(), outdir, true);
 	}
 

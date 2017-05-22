@@ -17,28 +17,28 @@ namespace MachineLearning
 	protected:
 
 		std::vector<std::string> categories;
-		MathVector<float> features;
+		MathVector<double> features;
 
 		static std::string CIPHERS;
 
 	public:
 
 		Data();
-		Data(std::vector<std::string> _categories, MathVector<float>& _features);
+		Data(std::vector<std::string> _categories, MathVector<double>& _features);
 		Data(std::string _data);
 
-		Instance& toInstance(std::string category, size_t& positive_count, float& blur_factor);
-		Instance& toLinearInstance(std::string category, size_t& positive_count, float& blur_factor);
+		Instance& toInstance(std::string category, size_t& positive_count, double& blur_factor);
+		Instance& toLinearInstance(std::string category, size_t& positive_count, double& blur_factor);
 		virtual void parseFrom(std::string data);
 
 		std::vector<std::string> getCategories();
 
-		float maximum();
+		double maximum();
 
 		size_t featuresSize();
 		void completeFeatures(size_t counts);
 
-		float at(size_t index);
+		double at(size_t index);
 	};
 };
 

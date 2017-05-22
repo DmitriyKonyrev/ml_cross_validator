@@ -10,12 +10,12 @@ namespace MachineLearning
 	{
 		public:
 
-			virtual float calc(float value)
+			virtual double calc(double value)
 			{
 				return 0;
 			}
 
-			virtual float dx(float value)
+			virtual double dx(double value)
 			{
 				return 0;
 			}
@@ -25,12 +25,12 @@ namespace MachineLearning
 	{
 	public:
 
-		float calc(float value)
+		double calc(double value)
 		{
 			return value < 0 ? -1. : 1.;
 		}
 
-		float dx(float value)
+		double dx(double value)
 		{
 			return 1;
 		}
@@ -40,12 +40,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return value < 0 ? 0. : 1.;
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
 				return 1;
 			}
@@ -55,14 +55,14 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return pow(1 + exp(-value), -1);
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
-				float result = calc(value);
+				double result = calc(value);
 
 				return result * (1 - result);
 			}
@@ -72,16 +72,16 @@ namespace MachineLearning
 	{
 		public:
 
-			float sigma;
+			double sigma;
 
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return 2 * sigma * (2 * value) - 1;
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
 				return 4 * sigma;
 			}
@@ -91,12 +91,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return log(value + sqrt(pow(value, 2) + 1));
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
 				return 1 / (value + sqrt(pow(value, 2) + 1)) * (1 + 0.5 * pow( pow(value, 2) + 1, -0.5) * 2 * value);
 			}
@@ -106,12 +106,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return exp(-pow(value, 2) / 2);
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
 				return exp(-pow(value, 2) / 2) * (-value);
 			}
@@ -121,12 +121,12 @@ namespace MachineLearning
 	{
 		public:
 
-			float calc(float value)
+			double calc(double value)
 			{
 				return value;
 			}
 
-			float dx(float value)
+			double dx(double value)
 			{
 				return 1;
 			}

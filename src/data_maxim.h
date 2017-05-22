@@ -23,7 +23,7 @@ namespace MachineLearning
 	{
 		public:
 
-			DataMaxim(std::vector<std::string> _categories, MathVector<float>& _features);
+			DataMaxim(std::vector<std::string> _categories, MathVector<double>& _features);
 			DataMaxim();
 
 			void parseFrom(std::string data, int feature_count);

@@ -44,12 +44,12 @@ unsigned int CrossValidation::genRandLimited(unsigned int limit)
 	return genRand() % limit;
 }
 
-static std::pair<float, float> run(Predictor& _predictor, std::vector<Instance>& _pool, size_t foldsCount)
+static std::pair<double, double> run(Predictor& _predictor, std::vector<Instance>& _pool, size_t foldsCount)
 {
 	return std::make_pair(0, 0);
 }
 
-std::pair<float, float> CrossValidation::test( Predictor* _predictor
+std::pair<double, double> CrossValidation::test( Predictor* _predictor
                                              , Pool& _pool
                                              , size_t foldsCount
                                              , std::string testing_category_name
@@ -163,20 +163,20 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
 		std::cout << "Instances are shuffled" << std::endl;
 	}
 
-    float average_learn_precision = 0.0;
-    float average_learn_complete  = 0.0;
-    float average_learn_f1        = 0.0;
-    float average_learn_accuracy  = 0.0;
-    float average_learn_rmse      = 0.0;
+    double average_learn_precision = 0.0;
+    double average_learn_complete  = 0.0;
+    double average_learn_f1        = 0.0;
+    double average_learn_accuracy  = 0.0;
+    double average_learn_rmse      = 0.0;
 
-    float average_test_precision = 0.0;
-    float average_test_complete  = 0.0;
-    float average_test_f1        = 0.0;
-    float average_test_accuracy  = 0.0;
-    float average_test_rmse      = 0.0;
+    double average_test_precision = 0.0;
+    double average_test_complete  = 0.0;
+    double average_test_f1        = 0.0;
+    double average_test_accuracy  = 0.0;
+    double average_test_rmse      = 0.0;
 
-    float averageDuration = 0.;
-	float averageComplexity = 0.;
+    double averageDuration = 0.;
+	double averageComplexity = 0.;
 
 	std::vector<Metrics::Metric> metrics_vector;
 	metrics_vector.push_back(Metrics::PrecisionMetric);
@@ -184,37 +184,36 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
 	metrics_vector.push_back(Metrics::F1ScoreMetric);
     metrics_vector.push_back(Metrics::AccuracyMetric);
 
-    std::vector<std::pair<float, float>> learning_curve;
+    std::vector<std::pair<double, double>> learning_curve;
 
 	for (size_t foldNumber = 0; foldNumber < foldsCount; ++foldNumber)
 	{
         learning_curve.clear();
-
+		std::vector<double> objWeights;
 		if (print)
 		{
 			std::cout << "----------------------------------------------------------" << std::endl;
 			std::cout << "Fold index " << foldNumber << std::endl;
 		}
 
-		float duration = 0.;
+		double duration = 0.;
 		clock_t start, finish;
-
-		start = clock();
         std::cout << "Learn set size: " << learnSet.at(foldNumber).size() << std::endl;
-		_predictor->learn(learnSet.at(foldNumber), learning_curve);
+		start = clock();
+		_predictor->learn(learnSet.at(foldNumber), objWeights, learning_curve);
 		finish = clock();
 
-		duration = (float)(finish - start);
+		duration = (double)(finish - start);
 
 		averageDuration += duration;
 		averageComplexity += _predictor->get_model_complexity();
         std::cout << "Check learn set" << std::endl;
-		std::vector<float> learnCharacteristics = _predictor->test(learnSet.at(foldNumber), metrics_vector);
-        float learn_precision = learnCharacteristics.at(0);
-        float learn_complete  = learnCharacteristics.at(1);
-        float learn_f1        = learnCharacteristics.at(2);
-        float learn_accuracy  = learnCharacteristics.at(3);
-        float learn_rmse      = learnCharacteristics.at(4);
+		std::vector<double> learnCharacteristics = _predictor->test(learnSet.at(foldNumber), metrics_vector);
+        double learn_precision = learnCharacteristics.at(0);
+        double learn_complete  = learnCharacteristics.at(1);
+        double learn_f1        = learnCharacteristics.at(2);
+        double learn_accuracy  = learnCharacteristics.at(3);
+        double learn_rmse      = learnCharacteristics.at(4);
 
         average_learn_precision += learn_precision;
         average_learn_complete  += learn_complete;
@@ -229,12 +228,12 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
         learn_rmse_path_file      << learn_rmse      << std::endl;
 
         std::cout << "Check test set" << std::endl;
-		std::vector<float> testCharacteristics = _predictor->test(testSet.at(foldNumber), metrics_vector);
-        float test_precision = testCharacteristics.at(0);
-        float test_complete  = testCharacteristics.at(1);
-        float test_f1        = testCharacteristics.at(2);
-        float test_accuracy  = testCharacteristics.at(3);
-        float test_rmse      = testCharacteristics.at(4);
+		std::vector<double> testCharacteristics = _predictor->test(testSet.at(foldNumber), metrics_vector);
+        double test_precision = testCharacteristics.at(0);
+        double test_complete  = testCharacteristics.at(1);
+        double test_f1        = testCharacteristics.at(2);
+        double test_accuracy  = testCharacteristics.at(3);
+        double test_rmse      = testCharacteristics.at(4);
 
         average_test_precision += test_precision;
         average_test_complete  += test_complete;
@@ -261,7 +260,7 @@ std::pair<float, float> CrossValidation::test( Predictor* _predictor
         std::cout << "rmse       : learn - " << learn_rmse      << " test - " << test_rmse     << std::endl;
 
         std::for_each(learning_curve.begin(), learning_curve.end(),
-        [&learning_logloss_path_file, &learning_rmse_path_file](std::pair<float, float>& values)
+        [&learning_logloss_path_file, &learning_rmse_path_file](std::pair<double, double>& values)
         {
             learning_logloss_path_file  << values.first << std::endl;
 			learning_rmse_path_file << values.second << std::endl;

@@ -18,19 +18,21 @@ using namespace MathCore::AlgebraCore::VectorCore::VectorNorm;
 
 namespace MachineLearning
 {
-	KNearestNeighbours::KNearestNeighbours(size_t _featuresCount, std::shared_ptr<MathVectorNorm<float>> distance, neighbour_weight_t neighbour_weight, bool fris_stolp)
+	KNearestNeighbours::KNearestNeighbours(size_t _featuresCount, std::shared_ptr<MathVectorNorm<double>> distance, neighbour_weight_t neighbour_weight, bool fris_stolp)
 	: Predictor(_featuresCount)
 	, m_distance(distance)
 	, m_neighbour_weight(neighbour_weight)
 	, m_fris_stolp(fris_stolp)
 	{ }
 
-	float KNearestNeighbours::predict(MathVector<float>& features)
+	double KNearestNeighbours::predict(MathVector<double>& features)
 	{
 		return predictRaw(Instance(features, 0.0));
 	}
 
-	void KNearestNeighbours::learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve)
+	void KNearestNeighbours::learn( std::vector<Instance>& learnSet
+			                      , std::vector<double>& objectsWeights
+			                      , std::vector<std::pair<double, double>>& learning_curve)
 	{
 		size_t positive_count = 0;
 		size_t negative_count = 0;
@@ -83,10 +85,10 @@ namespace MachineLearning
 		std::cout << "Start learning" << std::endl;
 
 		size_t maximal_count = std::min(positive_count, negative_count);
-		float maximal_count_quality = 0.0;
+		double maximal_count_quality = 0.0;
 
 		size_t minimal_count = 3;
-		float minimal_count_quality = 0.0;
+		double minimal_count_quality = 0.0;
 		size_t iterations = 0;
 		while (abs(maximal_count - minimal_count) > 2)
 		{
@@ -96,9 +98,9 @@ namespace MachineLearning
 			size_t iter_count_left = iter_count - 2;
 			size_t iter_count_right = iter_count + 2;
 
-			std::pair<float, float> qualities = testRaw(neigbours, learnSet, iter_count_left, iter_count_right);
-			float left_quality = qualities.first;
-			float right_quality = qualities.second;
+			std::pair<double, double> qualities = testRaw(neigbours, learnSet, iter_count_left, iter_count_right);
+			double left_quality = qualities.first;
+			double right_quality = qualities.second;
 
 			if (left_quality < right_quality)
 			{
@@ -159,7 +161,7 @@ namespace MachineLearning
 #pragma omp parallel for
 				for (size_t index_2 = index_1 + 1; index_2 < learnSet.size(); ++index_2)
 				{
-					float dist = calcDist(learnSet[index_1], learnSet[index_2]);
+					double dist = calcDist(learnSet[index_1], learnSet[index_2]);
 					neigbours[index_1][index_2 - 1] = neighbour_t(dist, {index_2, learnSet[index_2].getGoal()});
 					neigbours[index_2][index_1]     = neighbour_t(dist, {index_1, learnSet[index_1].getGoal()});
 				}
@@ -168,7 +170,7 @@ namespace MachineLearning
 #pragma omp parallel for
 				for (size_t index_2 = 0; index_2 < objects.size(); ++index_2)
 				{
-					float dist = (index_1 == objects_indexes[index_2]) ? std::numeric_limits<float>::max() : calcDist(learnSet[index_1], objects[index_2]);
+					double dist = (index_1 == objects_indexes[index_2]) ? std::numeric_limits<double>::max() : calcDist(learnSet[index_1], objects[index_2]);
 					neigbours[index_1][index_2] = neighbour_t(dist, {index_1, objects[index_2].getGoal()});
 				}
 			}
@@ -185,16 +187,16 @@ namespace MachineLearning
 	}
 
 
-	std::pair<float, float> KNearestNeighbours::predictRawest( neighbours_matrix_t& neigbours
+	std::pair<double, double> KNearestNeighbours::predictRawest( neighbours_matrix_t& neigbours
 			                                                 , size_t object_index
 										                     , size_t left_count
 										                     , size_t right_count)
 	{
-			float left_positive_count = 0;
-			float left_negative_count = 0;
+			double left_positive_count = 0;
+			double left_negative_count = 0;
 
-			float right_positive_count = 0;
-			float right_negative_count = 0;
+			double right_positive_count = 0;
+			double right_negative_count = 0;
 			
 			size_t max_count = std::max(left_count, right_count);
 
@@ -225,33 +227,33 @@ namespace MachineLearning
 				}
 			}
 			
-			float left_prediction  = left_positive_count  > left_negative_count  ? 1.0 : -1.0;
-			float right_prediction = right_positive_count > right_negative_count ? 1.0 : -1.0;
+			double left_prediction  = left_positive_count  > left_negative_count  ? 1.0 : -1.0;
+			double right_prediction = right_positive_count > right_negative_count ? 1.0 : -1.0;
 
 			return std::make_pair(left_prediction, right_prediction);
 	}
 
-	std::pair<float, float> KNearestNeighbours::testRaw( neighbours_matrix_t& neigbours
+	std::pair<double, double> KNearestNeighbours::testRaw( neighbours_matrix_t& neigbours
 													   , std::vector<Instance>& learnSet
 								                       , size_t left_count
 				                                       , size_t right_count)
 	{
-		float left_true_positive  = 0.;
-		float left_false_positive = 0.;
-		float left_true_negative  = 0.;
-		float left_false_negative = 0.;
+		double left_true_positive  = 0.;
+		double left_false_positive = 0.;
+		double left_true_negative  = 0.;
+		double left_false_negative = 0.;
 
-		float right_true_positive  = 0.;
-		float right_false_positive = 0.;
-		float right_true_negative  = 0.;
-		float right_false_negative = 0.;
+		double right_true_positive  = 0.;
+		double right_false_positive = 0.;
+		double right_true_negative  = 0.;
+		double right_false_negative = 0.;
 
-		auto increment_metrics = [&learnSet]( float prediction
+		auto increment_metrics = [&learnSet]( double prediction
 				                            , size_t index
-								            , float& true_positive
-								            , float& false_positive
-				                            , float& true_negative
-				                            , float& false_negative)
+								            , double& true_positive
+								            , double& false_positive
+				                            , double& true_negative
+				                            , double& false_negative)
 		{
 			if (prediction == learnSet.at(index).getGoal())
 			{
@@ -281,23 +283,23 @@ namespace MachineLearning
 		for (size_t index = 0; index < learnSet.size(); index++)
 		{
 
-			std::pair<float, float> prediction = predictRawest(neigbours, index, left_count, right_count);
+			std::pair<double, double> prediction = predictRawest(neigbours, index, left_count, right_count);
 			increment_metrics(prediction.first, index, left_true_positive,  left_false_positive,  left_true_negative,  left_false_negative);
 			increment_metrics(prediction.second, index, right_true_positive, right_false_positive, right_true_negative, right_false_negative);
 		}
 		
-		float left_quality =  Metrics::F1ScoreMetric(left_true_positive, left_false_positive, left_true_negative, left_false_negative);
-		float right_quality =  Metrics::F1ScoreMetric(right_true_positive, right_false_positive, right_true_negative, right_false_negative);
+		double left_quality =  Metrics::F1ScoreMetric(left_true_positive, left_false_positive, left_true_negative, left_false_negative);
+		double right_quality =  Metrics::F1ScoreMetric(right_true_positive, right_false_positive, right_true_negative, right_false_negative);
 		return std::make_pair(left_quality, right_quality);
 	}
 
-	float KNearestNeighbours::predictRaw(const Instance& object)
+	double KNearestNeighbours::predictRaw(const Instance& object)
 	{
 		std::vector<Instance>* results = new std::vector<Instance>;
 		std::vector<double>* distances = new std::vector<double>();
 	    m_neighbours.search(object, (int)m_effective_count, results, distances);
-		float positive_count = 0;
-		float negative_count = 0;
+		double positive_count = 0;
+		double negative_count = 0;
 		size_t index = 0;
 		std::for_each(results->begin(), results->end(),
 				[this, &index, &positive_count, &negative_count](const auto& neighbour)
@@ -309,7 +311,7 @@ namespace MachineLearning
 					index++;
 				});
 		delete distances;
-		float prediction =  positive_count > negative_count ? 1.0 : -1.0;
+		double prediction =  positive_count > negative_count ? 1.0 : -1.0;
 		return prediction;
 	}
 
@@ -318,7 +320,7 @@ namespace MachineLearning
 		return m_distance->calc(first.getFeatures(), second.getFeatures());
 	}
 
-	float KNearestNeighbours::fris_stolp( neighbours_matrix_t& neighbours
+	double KNearestNeighbours::fris_stolp( neighbours_matrix_t& neighbours
 			                            , std::vector<std::vector<size_t>>& renumerator
 										, size_t first
 										, size_t second
@@ -326,8 +328,8 @@ namespace MachineLearning
 	{
 		size_t first_second_index = renumerator[first][second];
 		size_t first_base_index   = renumerator[first][base];
-		float first_second_dist = neighbours[first][first_second_index].first;
-		float first_base_dist   = neighbours[first][first_base_index].first;
+		double first_second_dist = neighbours[first][first_second_index].first;
+		double first_base_dist   = neighbours[first][first_base_index].first;
 		return (-first_second_dist + first_base_dist) / (first_second_dist + first_base_dist) + 1.0;
 	}
 
@@ -348,12 +350,12 @@ namespace MachineLearning
 			}
 		else
 		{
-			float min_dist = neighbours[object_index][renumerator[object_index][*available_objects.begin()]].first;
+			double min_dist = neighbours[object_index][renumerator[object_index][*available_objects.begin()]].first;
 			for (const size_t& n_index: available_objects)
 			{
 				if (n_index == object_index)
 					continue;
-				float dist = neighbours[object_index][renumerator[object_index][n_index]].first;
+				double dist = neighbours[object_index][renumerator[object_index][n_index]].first;
 				if (dist <= min_dist)
 				{
 					object_index_f = n_index;
@@ -365,7 +367,7 @@ namespace MachineLearning
 		return object_index_f;
 	}
 
-	float KNearestNeighbours::calculate_efficiency( neighbours_matrix_t& neighbours
+	double KNearestNeighbours::calculate_efficiency( neighbours_matrix_t& neighbours
 												  , std::vector<std::vector<size_t>>& renumerator
 												  , std::vector<Instance>& objects
 												  , size_t object_index
@@ -373,28 +375,28 @@ namespace MachineLearning
 												  , const std::unordered_set<size_t>&  negative_objects
 												  , const std::unordered_set<size_t>&  ethalons)
 	{
-		float defense = 0.0;
+		double defense = 0.0;
 #pragma omp parallel for reduction (+:defense)
 		for(const size_t& object: positive_objects)
 		{
 			if (object_index == object)
 				continue;
 			size_t nearest = get_nearest_neighbour(neighbours, renumerator, object, ethalons);
-			float fris = fris_stolp(neighbours, renumerator, object, object_index, nearest);
+			double fris = fris_stolp(neighbours, renumerator, object, object_index, nearest);
 			defense = defense + fris;
 		}
 		if (positive_objects.size() > 1)
-			defense /= (float)(positive_objects.size() - 1);
-		float tolerance = 0.0;
+			defense /= (double)(positive_objects.size() - 1);
+		double tolerance = 0.0;
 #pragma omp parallel for reduction (+:tolerance)
 		for(const size_t& object: negative_objects)
 		{
 			size_t nearest = get_nearest_neighbour(neighbours, renumerator, object, ethalons);
-			float fris = fris_stolp(neighbours, renumerator, object, object_index, nearest);
+			double fris = fris_stolp(neighbours, renumerator, object, object_index, nearest);
 			tolerance = tolerance + fris;
 		}
 		if (!negative_objects.empty())
-			tolerance /= (float)negative_objects.size();
+			tolerance /= (double)negative_objects.size();
 		return 0.5 * defense + 0.5 * tolerance;
 	}
 
@@ -411,10 +413,10 @@ namespace MachineLearning
 															               , const std::unordered_set<size_t>&  ethalons) -> size_t
 		{
 			size_t most_efficient_positive = neighbours.size();
-			float  most_efficiency_positive = -10.0;
+			double  most_efficiency_positive = -10.0;
 			for (const size_t& object_index: positive_objects)
 			{
-				float efficiency = calculate_efficiency( neighbours
+				double efficiency = calculate_efficiency( neighbours
 						                               , renumerator
 						                               , objects
 													   , object_index
@@ -451,17 +453,17 @@ namespace MachineLearning
 														               , const std::unordered_set<size_t>&  negative_ethalons)
 											   	   -> std::unordered_set<size_t>
 		{
-			std::vector<std::pair<size_t, float>> objects_fris;
-			float max_fris = 0.0;
+			std::vector<std::pair<size_t, double>> objects_fris;
+			double max_fris = 0.0;
 			size_t max_obj = 0;
-			float min_fris = 2.0;
+			double min_fris = 2.0;
 			size_t min_obj = 0;
 			for (const size_t& object_index: positive_objects)
 			{
 				size_t positive_nearest = get_nearest_neighbour(neighbours, renumerator, object_index, positive_ethalons);
 				size_t negative_nearest = get_nearest_neighbour(neighbours, renumerator, object_index, negative_ethalons);
 
-				float fris = fris_stolp(neighbours, renumerator, object_index, positive_nearest, negative_nearest);
+				double fris = fris_stolp(neighbours, renumerator, object_index, positive_nearest, negative_nearest);
 				if (fris >= max_fris)
 				{
 					max_fris = fris;
@@ -475,11 +477,11 @@ namespace MachineLearning
 				objects_fris.push_back({object_index, fris});
 			}
 
-			float mean_fris = (max_fris - min_fris) / 2;
+			double mean_fris = (max_fris - min_fris) / 2;
 			std::cout << max_fris << " " << mean_fris << " " << min_fris << " " << objects_fris.size() << std::endl;
 			std::unordered_set<size_t> filtered_objects;
-			float true_treshold = std::min(1.8, max_fris - 0.05 * mean_fris);
-			float fail_treshold = std::max(0.2, 0.05 * mean_fris + min_fris);
+			double true_treshold = std::min(1.8, max_fris - 0.05 * mean_fris);
+			double fail_treshold = std::max(0.2, 0.05 * mean_fris + min_fris);
 			for (const auto& value: objects_fris)
 			{
 				if (value.second <= fail_treshold || value.second >= true_treshold)

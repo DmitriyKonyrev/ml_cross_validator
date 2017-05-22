@@ -24,8 +24,8 @@ namespace MachineLearning
 
 		protected:
 
-			MathVector<float> weights;
-			float threshold;
+			MathVector<double> weights;
+			double threshold;
 
 			HeavisideActivationFunctionLogistic* activate = new HeavisideActivationFunctionLogistic();
 			SigmoidActivationFunction* learningActivate = new SigmoidActivationFunction();
@@ -35,8 +35,8 @@ namespace MachineLearning
 			size_t maximalIterations;
 
 			weight_initializer_t weight_init;
-			float tau;
-			float default_learning_rate;
+			double tau;
+			double default_learning_rate;
 
 			bool do_jogging;
 			bool do_auto_precision;
@@ -49,8 +49,8 @@ namespace MachineLearning
 					          , size_t _minimalIterations
 							  , size_t _maximalIterations
 							  , weight_initializer_t _weight_init = fill_zeroes
-							  , float _tau = 0.0
-							  , float _default_lr = 1e-4
+							  , double _tau = 0.0
+							  , double _default_lr = 1e-4
 							  , bool _do_jogging        = false
 							  , bool _do_auto_precision = false
 							  , bool _do_early_stop     = false
@@ -67,17 +67,20 @@ namespace MachineLearning
 		    , learning_rate_type (_lr_type)
 			{ }
 
-			float predict(MathVector<float>& features);
-			void learn(std::vector<Instance>& learnSet, std::vector<std::pair<float, float>>& learning_curve);
-			float quality(std::vector<Instance>& testSet);
+			double predict(MathVector<double>& features);
+			void learn( std::vector<Instance>& learnSet
+					  , std::vector<double>& objectsWeights
+					  , std::vector<std::pair<double, double>>& learning_curve);
+			double quality(std::vector<Instance>& testSet);
 			void setIterationInterval(size_t _minimalIterations, size_t _maximalIterations);
 
 			size_t get_model_complexity();
 
+			Predictor* clone() const { return new LogisticRegression(*this);};
 		private:
-			float scalarProduct(MathVector<float>& features);
-			float predictRaw(float _scalar);
-			MathVector<float>& weightsInit(size_t size);
+			double scalarProduct(MathVector<double>& features);
+			double predictRaw(double _scalar);
+			MathVector<double>& weightsInit(size_t size);
 			void weightsJog();
 	};
 }
