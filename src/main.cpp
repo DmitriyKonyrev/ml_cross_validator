@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include "ada_boost.h"
+#include "cart.h"
 #include "data_storage.h"
 #include "data_storage_maximus.h"
 #include "k_fold_cross_validation.h"
@@ -42,7 +43,7 @@ try
     ("output-path,o", boost::program_options::value<std::string>(&outdir), "directory with output files")
 	("suffix,s", boost::program_options::value<std::string>(&suffix), "suffix of the output directory")
     ("fold-count,k", boost::program_options::value<uint32_t>(&fold_count), "count of folds to validate")
-    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn, weak, adaboost)")
+    ("predictor-type,t", boost::program_options::value<std::string>(&predictor_type), "type of predictior (log_regressor, ldf, knn, weak, adaboost, cart)")
     ;
     boost::program_options::variables_map vm;
 	 boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
@@ -70,7 +71,13 @@ try
 	double bagging_factor         = 1.0;
 	std::string quality_criteria = "f1";
 	double max_quality            = 0.98;
+	//Cart options
+    bool weak_leaf         = false;
+	bool lr_cart           = false;
+	double pruning_factor  = 0.0;
+	double quality_max     = 0.98;
 	bool ensemble_method = predictor_type.compare("adaboost") == 0;
+	bool decision_tree = predictor_type.compare("cart") == 0;
 	if (predictor_type.compare("adaboost") == 0)
 	{
 		desc.add_options()
@@ -83,13 +90,24 @@ try
 		boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
 		boost::program_options::notify(vm);
 	}
+	if (predictor_type.compare("cart") == 0 || (ensemble_method && estimator_type.compare("cart") == 0))
+	{
+		desc.add_options()
+		("weak-impurity", boost::program_options::value<std::string>(&weak_impurity), "weak impurity type (info_benefit, khi_2, mutual_info, gini)")
+		("weak-leaf", boost::program_options::bool_switch(&weak_leaf), "use weak rules as leaf")
+		("quality-max" , boost::program_options::value<double>(&quality_max)   , "maximal quality node value")
+		("lr-cart", boost::program_options::bool_switch(&lr_cart), "use log_regressor as leaf")
+		("pruning-factor,p" , boost::program_options::value<double>(&pruning_factor)   , "volume of chosen data from learn set");
+		boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+		boost::program_options::notify(vm);
+	}
 	if (predictor_type.compare("knn") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 	{
 		desc.add_options()
 		("weight-scheme,w", boost::program_options::value<std::string>(&weight_scheme), "scheme of weighting neighbours (const, exp, sigm, hyper, log)")
 		("fris-stolp,f", boost::program_options::bool_switch(&do_selecting), "do FRiS-STOLP objects selecting");
 	}
-	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
+	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0) || (decision_tree && lr_cart))
 	{
 		desc.add_options()
 		("weight-init,w", boost::program_options::value<std::string>(&weight_init_type), "scheme of weight initialization (zeros, random, info_benefit, khi_2, mutual_info)")
@@ -126,13 +144,24 @@ try
 			classifier_name += "_bagging" + std::to_string(bagging_factor);
 		classifier_name += "_" + estimator_type;
 	}
+	if (predictor_type.compare("cart") == 0 || (ensemble_method && estimator_type.compare("cart") == 0))
+	{
+		classifier_name += "_" + weak_impurity;
+		classifier_name += "_" + std::to_string(max_quality);
+		classifier_name += "_" + std::to_string(pruning_factor);
+		if (weak_leaf)
+			classifier_name += "_weak";
+		else
+			if (lr_cart)
+				classifier_name += "_lr";
+	}
 	if (predictor_type.compare("knn") == 0 || (ensemble_method && estimator_type.compare("knn") == 0))
 	{
 		classifier_name += "_" + weight_scheme;
 		if (do_selecting)
 			classifier_name += "_fris";
 	}
-	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0))
+	if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0) || (decision_tree && lr_cart))
 	{
 		classifier_name += "_" + weight_init_type;
 		classifier_name += "_" + std::to_string(learning_rate);
@@ -218,7 +247,7 @@ try
 			std::shared_ptr<MathVectorNorm<double>> distance(new EuclideanNorm<double>());
 			predictor = new KNearestNeighbours(pool.getInstanceCount(), distance, weight, do_selecting);
 		}
-		if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0))
+		if (predictor_type.compare("log_regressor") == 0 || (ensemble_method && estimator_type.compare("log_regressor") == 0) || (decision_tree && lr_cart))
         {
 			weight_initializer_t weight_init = fill_zeroes;
 			if (weight_init_type.compare("zeros") == 0)
@@ -250,7 +279,34 @@ try
 											  , auto_precision
 											  , early_stop);
         }
+		if (predictor_type.compare("cart") == 0 || (ensemble_method && predictor_type.compare("cart") == 0))
+		{
+			WeakClassifier::PurityType purity_type = WeakClassifier::PurityType::INFO_BENEFIT;
+			if (weak_impurity.compare("gini") == 0)
+				purity_type = WeakClassifier::PurityType::GINI;
+			else if (weak_impurity.compare("info_benefit") == 0)
+				purity_type = WeakClassifier::PurityType::INFO_BENEFIT;
+			else if (weak_impurity.compare("mutual_info") == 0)
+				purity_type = WeakClassifier::PurityType::MUTUAL;
+			else if (weak_impurity.compare("khi_2") == 0)
+				purity_type = WeakClassifier::PurityType::KHI_2;
+			PredictorPtr weak_type(new WeakClassifier(pool.getInstanceCount(), purity_type));
 
+			PredictorPtr lr_type = nullptr;
+			if (lr_cart)
+			{
+				weak_leaf = false;
+				lr_type = PredictorPtr(predictor->clone());
+			}
+			
+			predictor = new DecisionTree( pool.getInstanceCount()
+										, weak_type
+										, quality_max
+										, weak_leaf
+										, lr_type
+										, pruning_factor);
+
+		}
 		if (predictor_type.compare("adaboost") == 0)
 		{
 			Metrics::Metric quality = Metrics::F1ScoreMetric;

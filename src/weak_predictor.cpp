@@ -1,3 +1,5 @@
+#include <boost/progress.hpp>
+
 #include <vector>
 #include <limits>
 #include <math.h>
@@ -55,6 +57,7 @@ namespace MachineLearning
 		double best_impurity = -1.0 * std::numeric_limits<double>::max();
 		size_t best_feature  = features_count + 1;
 		double beast_value   = 0.0;
+		boost::progress_display show_progress( features_count );
 #pragma omp parallel for
 		for (size_t feature_index = 0; feature_index < features_count; ++feature_index)
 		{
@@ -73,7 +76,7 @@ namespace MachineLearning
 			right_value += 1e-3 * med_value;
 
 			double phi_factor = (1 + pow(5, 0.5)) / 2.0;
-			double precision = (right_value - left_value) / 1e4;
+			double precision = (right_value - left_value) / 1e2;
 			size_t iterations = 0;
 			while (abs(right_value - left_value) > precision)
 			{
@@ -94,8 +97,8 @@ namespace MachineLearning
 				}
 
 				iterations++;
-				/*std::cout << "\t\t\tleft: " << left_value << " " << impurity_1 << std::endl
-					      << "\t\t\tright: " << right_value << " " << impurity_2 << std::endl;*/
+				//std::cout << "\t\t\tleft: " << left_value << " " << impurity_1 << std::endl
+				//	      << "\t\t\tright: " << right_value << " " << impurity_2 << std::endl;
 			}
 
 			double value = (right_value - left_value) / 2.0;
@@ -107,6 +110,9 @@ namespace MachineLearning
 				best_feature  = feature_index;
 				beast_value   = value;
 			}
+
+#pragma omp atomic
+			++show_progress;
 
 			//std::cout << "\tbest value: " << value << " best impurity: " << impurity << std::endl;
 		}
@@ -206,13 +212,13 @@ namespace MachineLearning
 				                     total_counter.second * log2(total_counter.second / summary)) / summary;
 
 			double feature_summary     = counter.first + counter.second;
-			feature_summary = (feature_summary == 0.0) ? 1e-7 : feature_summary;
+			feature_summary = (feature_summary <= 0.0) ? 1e-7 : feature_summary;
 			double no_feature_summary  = summary - feature_summary;
-			no_feature_summary = (no_feature_summary == 0.0) ? 1e-7 : no_feature_summary;
+			no_feature_summary = (no_feature_summary <= 0.0) ? 1e-7 : no_feature_summary;
 			double no_feature_positive = total_counter.first  - counter.first;
-			no_feature_positive = (no_feature_positive == 0.0) ? 1e-7 : no_feature_positive;
+			no_feature_positive = (no_feature_positive <= 0.0) ? 1e-7 : no_feature_positive;
 			double no_feature_negative = total_counter.second - counter.second;
-			no_feature_negative = (no_feature_negative == 0.0) ? 1e-7 : no_feature_negative;
+			no_feature_negative = (no_feature_negative <= 0.0) ? 1e-7 : no_feature_negative;
 
 			double info_feature = (counter.first * log2(counter.first / feature_summary) + 
 				                  counter.second * log2(counter.second / feature_summary)) / summary;
@@ -233,10 +239,10 @@ namespace MachineLearning
 
 			double no_feature_positive = total_counter.first  - counter.first;
 			double no_feature_negative = total_counter.second - counter.second;
-			feature_summary = (feature_summary == 0.0) ? 1e-7 : feature_summary;
-			no_feature_summary = (no_feature_summary == 0.0) ? 1e-7 : no_feature_summary;
-			no_feature_positive = (no_feature_positive == 0.0) ? 1e-7 : no_feature_positive;
-			no_feature_negative = (no_feature_negative == 0.0) ? 1e-7 : no_feature_negative;
+			feature_summary = (feature_summary <= 0.0) ? 1e-7 : feature_summary;
+			no_feature_summary = (no_feature_summary <= 0.0) ? 1e-7 : no_feature_summary;
+			no_feature_positive = (no_feature_positive <= 0.0) ? 1e-7 : no_feature_positive;
+			no_feature_negative = (no_feature_negative <= 0.0) ? 1e-7 : no_feature_negative;
 
 			return mutual_info(counter.first,       feature_summary,    total_counter.first,  summary) +
 				   mutual_info(counter.second,      feature_summary,    total_counter.second, summary) +
@@ -277,10 +283,10 @@ namespace MachineLearning
 			double no_feature_summary  = summary - feature_summary;
 			double no_feature_positive = total_counter.first  - counter.first;
 			double no_feature_negative = total_counter.second - counter.second;
-			feature_summary = (feature_summary == 0.0) ? 1e-7 : feature_summary;
-			no_feature_summary = (no_feature_summary == 0.0) ? 1e-7 : no_feature_summary;
-			no_feature_positive = (no_feature_positive == 0.0) ? 1e-7 : no_feature_positive;
-			no_feature_negative = (no_feature_negative == 0.0) ? 1e-7 : no_feature_negative;
+			feature_summary = (feature_summary <= 0.0) ? 1e-7 : feature_summary;
+			no_feature_summary = (no_feature_summary <= 0.0) ? 1e-7 : no_feature_summary;
+			no_feature_positive = (no_feature_positive <= 0.0) ? 1e-7 : no_feature_positive;
+			no_feature_negative = (no_feature_negative <= 0.0) ? 1e-7 : no_feature_negative;
 
 			double gini_feature = (counter.first * counter.first / feature_summary + 
 				                   counter.second * counter.second / feature_summary) / summary;
