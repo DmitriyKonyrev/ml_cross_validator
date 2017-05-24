@@ -178,8 +178,8 @@ namespace MachineLearning
 					rightLearnSubset.push_back(instance);
 			}
 
-			if (m_lr_type == nullptr)
-			{
+			//if (m_lr_type == nullptr)
+			//{
 				std::cout << "Learn left subtree" << std::endl;
 				std::shared_ptr<AbstractNode> left_node  = learn_subtree(leftLearnSubset,  leftTestSubset,  leftWeights);
 				std::cout << "Learn right subtree" << std::endl;
@@ -187,7 +187,7 @@ namespace MachineLearning
 				m_tree.push_back(left_node);
 				m_tree.push_back(right_node);
 				return std::shared_ptr<AbstractNode>(new PredictorNode(weak_predicate, left_node, right_node));
-			}
+			/*}
 			else
 			{
 				std::cout << "LR leaf reached" << std::endl;
@@ -205,7 +205,7 @@ namespace MachineLearning
 				m_tree.push_back(left_leaf);
 				m_tree.push_back(right_leaf);
 				return std::shared_ptr<AbstractNode>(new PredictorNode(weak_predicate, left_leaf, right_leaf));
-			}
+			}*/
 		}
 	}
 }

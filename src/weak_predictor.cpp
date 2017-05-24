@@ -71,6 +71,12 @@ namespace MachineLearning
 			});
 			double left_value  = min_value->getFeatures().getElement(feature_index);
 			double right_value = max_value->getFeatures().getElement(feature_index);
+			
+			if (left_value == right_value)
+			{
+				continue;
+			}
+
 			double med_value = (right_value - left_value) / 2;
 			left_value  -= 1e-3 * med_value;
 			right_value += 1e-3 * med_value;
@@ -78,7 +84,66 @@ namespace MachineLearning
 			double phi_factor = (1 + pow(5, 0.5)) / 2.0;
 			double precision = (right_value - left_value) / 1e2;
 			size_t iterations = 0;
-			while (abs(right_value - left_value) > precision)
+
+			size_t steps = (size_t)((right_value - left_value) / precision);
+			double step  = precision;
+			double value = 0.0;
+
+			std::vector<std::pair<double, std::pair<double, double>>> counters;
+			counters.reserve(steps + 1);
+			for (size_t index = 0; index < steps; ++index)
+			{
+				value += step;
+				counters.push_back({value, {0.0, 0.0}});
+			}
+
+			if (counters.back().first != right_value)
+				counters.push_back({right_value, {0.0, 0.0}});
+
+#pragma omp parallel for
+			for (size_t object_index = 0; object_index < learnSet.size(); ++object_index)
+			{
+				size_t index = floor((learnSet[object_index].getFeatures().getElement(feature_index) - left_value) / step);
+				if (learnSet[object_index].getGoal() == 1.0)
+#pragma omp atomic
+					counters[index].second.first += objectsImportance[object_index];
+				else
+#pragma omp atomic
+					counters[index].second.second += objectsImportance[object_index];
+			}
+
+			double max_impurity_value = -1.0 * std::numeric_limits<double>::max();
+			double max_impurity = -1.0 * std::numeric_limits<double>::max();
+			std::pair<double, double> counts {0.0, 0.0};
+			for (auto& treshold: counters)
+			{
+				counts.first += treshold.second.first;
+				counts.second += treshold.second.second;
+				double impurity_value = 0.0;
+				switch(m_type)
+				{
+					case PurityType::INFO_BENEFIT:
+						impurity_value = evaluate_info_benefit(counts, total);
+						break;
+					case PurityType::MUTUAL:
+						impurity_value = evaluate_mutual_info(counts, total);
+						break;
+					case PurityType::KHI_2:
+						impurity_value = evaluate_khi_2(counts, total);
+						break;
+					case PurityType::GINI:
+						impurity_value = evaluate_gini(counts, total);
+						break;
+				}
+
+				if (impurity_value > max_impurity_value)
+				{
+					max_impurity = impurity_value;
+					max_impurity_value = treshold.first;
+				}
+			}
+
+			/*while (abs(right_value - left_value) > precision)
 			{
 				double factor = (right_value - left_value) / phi_factor;
 				double value_1 = right_value - factor;
@@ -102,13 +167,13 @@ namespace MachineLearning
 			}
 
 			double value = (right_value - left_value) / 2.0;
-			double impurity = evaluate_impurity(learnSet, objectsImportance, value, feature_index, total, value_counts);
+			double impurity = evaluate_impurity(learnSet, objectsImportance, value, feature_index, total, value_counts);*/
 #pragma omp atomic
-			if (impurity > best_impurity)
+			if (max_impurity > best_impurity)
 			{
-				best_impurity = impurity;
+				best_impurity = max_impurity;
 				best_feature  = feature_index;
-				beast_value   = value;
+				beast_value   = max_impurity_value;
 			}
 
 #pragma omp atomic
